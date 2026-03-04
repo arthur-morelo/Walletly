@@ -46,51 +46,50 @@ export const dadosResultadoMensal = [
 export const cursos = [
   {
     id: 1,
-    Title: "Desenvolvimento Web Full Stack",
-    textLeft: "Frontend com React e TypeScript",
-    textRight: "Backend com Node.js e PostgreSQL",
+    Title: "Finanças Pessoais Essenciais",
+    textLeft: "Organização e Orçamento Familiar",
+    textRight: "Gestão de Dívidas e Reserva de Emergência",
     courseDescription:
-      "Domine o desenvolvimento web completo, desde a criação de interfaces modernas e responsivas até a construção de APIs robustas e escaláveis. Aprenda as tecnologias mais requisitadas pelo mercado e desenvolva projetos reais do zero.",
+      "Aprenda a assumir o controle do seu dinheiro. Entenda como criar um orçamento realista, eliminar dívidas de forma estratégica e construir uma reserva de segurança para garantir sua tranquilidade financeira.",
   },
   {
     id: 2,
-    Title: "Python para Ciência de Dados",
-    textLeft: "Análise de Dados e Machine Learning",
-    textRight: "Visualização com Matplotlib e Seaborn",
+    Title: "Investimentos para Iniciantes",
+    textLeft: "Renda Fixa e Tesouro Direto",
+    textRight: "Fundos Imobiliários e ETFs",
     courseDescription:
-      "Transforme dados em insights valiosos utilizando Python. Explore pandas, numpy, scikit-learn e aprenda a criar modelos preditivos, realizar análises estatísticas e visualizações profissionais que impulsionam decisões estratégicas.",
+      "Faça o seu dinheiro trabalhar para você. Descubra como sair da poupança e montar uma carteira de investimentos segura e rentável, entendendo o perfil de investidor e os principais ativos do mercado financeiro.",
   },
   {
     id: 3,
-    Title: "UI/UX Design Profissional",
-    textLeft: "Design Thinking e Prototipagem",
-    textRight: "Figma e Adobe XD Avançado",
+    Title: "Gestão Financeira Empresarial",
+    textLeft: "Fluxo de Caixa e Capital de Giro",
+    textRight: "Análise de DRE e Balanço Patrimonial",
     courseDescription:
-      "Aprenda a criar experiências digitais memoráveis e interfaces intuitivas. Domine os princípios de design, psicologia das cores, tipografia e ferramentas profissionais para desenvolver produtos centrados no usuário.",
+      "Domine as finanças do seu negócio. Aprenda a separar as contas pessoais das empresariais, gerenciar o fluxo de caixa diário e interpretar relatórios contábeis para tomar decisões estratégicas de crescimento.",
   },
   {
     id: 4,
-    Title: "DevOps e Cloud Computing",
-    textLeft: "Docker, Kubernetes e CI/CD",
-    textRight: "AWS, Azure e Google Cloud",
+    Title: "Bolsa de Valores e Renda Variável",
+    textLeft: "Análise Fundamentalista de Ações",
+    textRight: "Estratégias de Longo Prazo (Buy & Hold)",
     courseDescription:
-      "Aprenda a automatizar deploys, gerenciar infraestrutura como código e implementar pipelines de integração contínua. Domine as principais plataformas cloud e práticas modernas de DevOps utilizadas por empresas globais.",
+      "Aprofunde-se no mercado de ações. Aprenda a analisar empresas, ler indicadores financeiros, entender o pagamento de dividendos e montar uma estratégia sólida para construção de patrimônio no longo prazo.",
   },
   {
     id: 5,
-    Title: "Mobile com React Native",
-    textLeft: "Apps iOS e Android Nativos",
-    textRight: "Publicação na App Store e Play Store",
+    Title: "Precificação e Custos para Negócios",
+    textLeft: "Formação de Preço de Venda",
+    textRight: "Margem de Contribuição e Ponto de Equilíbrio",
     courseDescription:
-      "Desenvolva aplicativos móveis multiplataforma com uma única base de código. Aprenda desde conceitos fundamentais até recursos avançados como navegação, animações, integração com APIs e publicação nas lojas oficiais.",
+      "Pare de perder dinheiro na venda dos seus produtos ou serviços. Entenda a diferença entre custo e despesa, aprenda a calcular sua margem de lucro real e defina preços competitivos e sustentáveis.",
   },
   {
     id: 6,
-    Title: "Cybersegurança e Ethical Hacking",
-    textLeft: "Testes de Penetração e Vulnerabilidades",
-    textRight: "Segurança de Redes e Aplicações",
+    Title: "Planejamento Tributário e Aposentadoria",
+    textLeft: "Imposto de Renda e MEI",
+    textRight: "Previdência Privada e Independência Financeira",
     courseDescription:
-      "Aprenda a proteger sistemas e identificar vulnerabilidades antes dos hackers. Explore técnicas de ethical hacking, análise de malware, criptografia e as melhores práticas de segurança da informação do mercado.",
+      "Planeje o seu futuro e otimize seus impostos. Entenda as obrigações fiscais de pessoas físicas e jurídicas e trace um plano concreto para alcançar a independência financeira e uma aposentadoria confortável.",
   },
-  
 ];

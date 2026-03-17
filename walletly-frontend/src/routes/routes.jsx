@@ -19,13 +19,13 @@ import Curso from "../pages/Cursos/CursoPage";
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/">
-      <Route index element={<Login />} />
+      <Route index element={<Start />} />
       
       <Route path="perfil" element={<Perfil/>} />
 
       <Route path="cadastro" element={<Cadastro />} />
 
-      <Route path="start" element={<Start />} />
+      <Route path="login" element={<Login />} />
 
       <Route path="extrato" element={<Extrato />} />
 

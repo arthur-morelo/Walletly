@@ -99,7 +99,7 @@ function Cadastro() {
 
           {/* 4. Corrigido <a> para <Link> */}
           <div className="text-center text-sm text-white">
-            <Link to="/" className="hover:underline">
+            <Link to="/login" className="hover:underline">
               Já tem uma conta? Faça login
             </Link>
           </div>

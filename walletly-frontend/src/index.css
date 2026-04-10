@@ -3,11 +3,13 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply bg-white text-gray-900 transition-colors duration-300;
+  html {
+    /* Define o fundo padrão e o fundo dark para o documento inteiro */
+    @apply bg-white dark:bg-slate-900;
   }
   
-  .dark body {
-    @apply bg-slate-900 text-gray-100;
+  body {
+    /* Garante que o texto também mude e tenha uma transição suave */
+    @apply bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 transition-colors duration-300;
   }
 }

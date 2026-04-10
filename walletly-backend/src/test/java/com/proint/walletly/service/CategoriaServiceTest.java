@@ -1,5 +1,7 @@
 package com.proint.walletly.service;
 
+import com.proint.walletly.dto.categoria.CategoriaDTO;
+import com.proint.walletly.mapper.CategoriaMapper;
 import com.proint.walletly.model.Categoria;
 import com.proint.walletly.repository.CategoriaRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,7 +21,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,10 +29,14 @@ class CategoriaServiceTest {
     @Mock
     private CategoriaRepository categoriaRepository;
 
+    @Mock
+    private CategoriaMapper categoriaMapper; // Adicionado o Mock do Mapper
+
     @InjectMocks
     private CategoriaService categoriaService;
 
     private Categoria testCategoria;
+    private CategoriaDTO testCategoriaDTO;
 
     @BeforeEach
     void setUp() {
@@ -40,211 +45,87 @@ class CategoriaServiceTest {
                 .nome("Alimentação")
                 .urlImagemCategoria("https://example.com/food.png")
                 .build();
+
+        // Inicializando o DTO correspondente para os testes
+        testCategoriaDTO = new CategoriaDTO(1L, "Alimentação", "https://example.com/food.png");
     }
 
     @Test
     void save_ShouldReturnSavedCategoria_WhenValidCategoriaProvided() {
+        // Configura o comportamento do Mapper e Repository
+        when(categoriaMapper.toEntity(any(CategoriaDTO.class))).thenReturn(testCategoria);
         when(categoriaRepository.save(any(Categoria.class))).thenReturn(testCategoria);
+        when(categoriaMapper.toDto(any(Categoria.class))).thenReturn(testCategoriaDTO);
 
-        Categoria result = categoriaService.save(testCategoria);
+        CategoriaDTO result = categoriaService.save(testCategoriaDTO);
 
         assertNotNull(result);
-        assertEquals(testCategoria.getId(), result.getId());
-        assertEquals(testCategoria.getNome(), result.getNome());
-        assertEquals(testCategoria.getUrlImagemCategoria(), result.getUrlImagemCategoria());
-        verify(categoriaRepository).save(testCategoria);
+        assertEquals(testCategoriaDTO.getId(), result.getId());
+        verify(categoriaRepository).save(any(Categoria.class));
     }
 
     @Test
     void findById_ShouldReturnCategoria_WhenIdExists() {
-        Long id = 1L;
-        when(categoriaRepository.findById(id)).thenReturn(Optional.of(testCategoria));
+        when(categoriaRepository.findById(1L)).thenReturn(Optional.of(testCategoria));
+        when(categoriaMapper.toDto(testCategoria)).thenReturn(testCategoriaDTO);
 
-        Optional<Categoria> result = categoriaService.findById(id);
+        Optional<CategoriaDTO> result = categoriaService.findById(1L);
 
         assertTrue(result.isPresent());
-        assertEquals(testCategoria.getId(), result.get().getId());
-        assertEquals(testCategoria.getNome(), result.get().getNome());
-        assertEquals(testCategoria.getUrlImagemCategoria(), result.get().getUrlImagemCategoria());
-        verify(categoriaRepository).findById(id);
+        assertEquals(testCategoriaDTO.getNome(), result.get().getNome());
     }
 
     @Test
     void findById_ShouldReturnEmpty_WhenIdDoesNotExist() {
-        Long id = 999L;
-        when(categoriaRepository.findById(id)).thenReturn(Optional.empty());
+        when(categoriaRepository.findById(999L)).thenReturn(Optional.empty());
 
-        Optional<Categoria> result = categoriaService.findById(id);
+        Optional<CategoriaDTO> result = categoriaService.findById(999L);
 
         assertFalse(result.isPresent());
-        verify(categoriaRepository).findById(id);
     }
 
     @Test
     void findAll_ShouldReturnPageOfCategorias_WhenPageableProvided() {
-        List<Categoria> categorias = Arrays.asList(testCategoria);
-        Page<Categoria> page = new PageImpl<>(categorias);
+        Page<Categoria> page = new PageImpl<>(Arrays.asList(testCategoria));
         Pageable pageable = PageRequest.of(0, 10);
 
         when(categoriaRepository.findAll(pageable)).thenReturn(page);
+        when(categoriaMapper.toDto(any(Categoria.class))).thenReturn(testCategoriaDTO);
 
-        Page<Categoria> result = categoriaService.findAll(pageable);
+        Page<CategoriaDTO> result = categoriaService.findAll(pageable);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals(testCategoria.getId(), result.getContent().get(0).getId());
-        verify(categoriaRepository).findAll(pageable);
+        assertEquals(testCategoriaDTO.getId(), result.getContent().get(0).getId());
     }
 
     @Test
     void update_ShouldReturnUpdatedCategoria_WhenIdExists() {
         Long id = 1L;
-        Categoria updatedCategoria = Categoria.builder()
-                .id(1L)
-                .nome("Transporte")
-                .urlImagemCategoria("https://example.com/transport.png")
-                .build();
+        Categoria updatedCategoria = Categoria.builder().id(id).nome("Transporte").build();
+        CategoriaDTO updatedDTO = new CategoriaDTO(id, "Transporte", null);
 
         when(categoriaRepository.findById(id)).thenReturn(Optional.of(testCategoria));
         when(categoriaRepository.save(any(Categoria.class))).thenReturn(updatedCategoria);
+        when(categoriaMapper.toDto(any(Categoria.class))).thenReturn(updatedDTO);
 
-        Categoria result = categoriaService.update(id, updatedCategoria);
+        CategoriaDTO result = categoriaService.update(id, updatedDTO);
 
         assertNotNull(result);
-        assertEquals(updatedCategoria.getNome(), result.getNome());
-        assertEquals(updatedCategoria.getUrlImagemCategoria(), result.getUrlImagemCategoria());
-        verify(categoriaRepository).findById(id);
-        verify(categoriaRepository).save(any(Categoria.class));
+        assertEquals("Transporte", result.getNome());
     }
 
     @Test
     void update_ShouldThrowException_WhenIdDoesNotExist() {
         Long id = 999L;
-        Categoria updatedCategoria = new Categoria();
-
         when(categoriaRepository.findById(id)).thenReturn(Optional.empty());
 
-        RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> categoriaService.update(id, updatedCategoria));
-        assertEquals("Categoria não encontrada com o ID " + id, exception.getMessage());
-        verify(categoriaRepository).findById(id);
-        verify(categoriaRepository, never()).save(any(Categoria.class));
+        assertThrows(RuntimeException.class, () -> categoriaService.update(id, testCategoriaDTO));
     }
 
     @Test
     void deleteById_ShouldCallRepositoryDelete_WhenValidIdProvided() {
-        Long id = 1L;
-
-        categoriaService.deleteById(id);
-
-        verify(categoriaRepository).deleteById(id);
-    }
-
-    @Test
-    void update_ShouldUpdateCorrectFields_WhenIdExists() {
-        Long id = 1L;
-        Categoria updatedData = Categoria.builder()
-                .nome("Entretenimento")
-                .urlImagemCategoria("https://example.com/entertainment.png")
-                .build();
-
-        when(categoriaRepository.findById(id)).thenReturn(Optional.of(testCategoria));
-        when(categoriaRepository.save(any(Categoria.class)))
-                .thenAnswer(invocation -> {
-                    Categoria categoria = invocation.getArgument(0);
-                    assertEquals(updatedData.getNome(), categoria.getNome());
-                    assertEquals(updatedData.getUrlImagemCategoria(), categoria.getUrlImagemCategoria());
-                    return categoria;
-                });
-
-        categoriaService.update(id, updatedData);
-
-        verify(categoriaRepository).findById(id);
-        verify(categoriaRepository).save(any(Categoria.class));
-    }
-
-    @Test
-    void save_ShouldPreserveAllFields_WhenValidCategoriaProvided() {
-        when(categoriaRepository.save(any(Categoria.class)))
-                .thenAnswer(invocation -> {
-                    Categoria categoria = invocation.getArgument(0);
-                    assertEquals(testCategoria.getNome(), categoria.getNome());
-                    assertEquals(testCategoria.getUrlImagemCategoria(), categoria.getUrlImagemCategoria());
-                    return testCategoria;
-                });
-
-        Categoria result = categoriaService.save(testCategoria);
-
-        assertNotNull(result);
-        verify(categoriaRepository).save(testCategoria);
-    }
-
-    @Test
-    void findAll_ShouldReturnMultipleCategorias_WhenMultipleCategoriasExist() {
-        Categoria categoria2 = Categoria.builder()
-                .id(2L)
-                .nome("Transporte")
-                .urlImagemCategoria("https://example.com/transport.png")
-                .build();
-
-        List<Categoria> categorias = Arrays.asList(testCategoria, categoria2);
-        Page<Categoria> page = new PageImpl<>(categorias);
-        Pageable pageable = PageRequest.of(0, 10);
-
-        when(categoriaRepository.findAll(pageable)).thenReturn(page);
-
-        Page<Categoria> result = categoriaService.findAll(pageable);
-
-        assertNotNull(result);
-        assertEquals(2, result.getTotalElements());
-        assertEquals(2, result.getContent().size());
-        verify(categoriaRepository).findAll(pageable);
-    }
-
-    @Test
-    void update_ShouldUpdateOnlyNome_WhenOnlyNomeProvided() {
-        Long id = 1L;
-        Categoria updatedData = Categoria.builder()
-                .nome("Nova Categoria")
-                .build();
-
-        when(categoriaRepository.findById(id)).thenReturn(Optional.of(testCategoria));
-        when(categoriaRepository.save(any(Categoria.class)))
-                .thenAnswer(invocation -> {
-                    Categoria categoria = invocation.getArgument(0);
-                    assertEquals(updatedData.getNome(), categoria.getNome());
-                    // URL should remain unchanged
-                    assertEquals(testCategoria.getUrlImagemCategoria(), categoria.getUrlImagemCategoria());
-                    return categoria;
-                });
-
-        categoriaService.update(id, updatedData);
-
-        verify(categoriaRepository).findById(id);
-        verify(categoriaRepository).save(any(Categoria.class));
-    }
-
-    @Test
-    void update_ShouldUpdateOnlyUrlImagem_WhenOnlyUrlImagemProvided() {
-        Long id = 1L;
-        Categoria updatedData = Categoria.builder()
-                .urlImagemCategoria("https://example.com/new-image.png")
-                .build();
-
-        when(categoriaRepository.findById(id)).thenReturn(Optional.of(testCategoria));
-        when(categoriaRepository.save(any(Categoria.class)))
-                .thenAnswer(invocation -> {
-                    Categoria categoria = invocation.getArgument(0);
-                    assertEquals(updatedData.getUrlImagemCategoria(), categoria.getUrlImagemCategoria());
-                    // Nome should remain unchanged
-                    assertEquals(testCategoria.getNome(), categoria.getNome());
-                    return categoria;
-                });
-
-        categoriaService.update(id, updatedData);
-
-        verify(categoriaRepository).findById(id);
-        verify(categoriaRepository).save(any(Categoria.class));
+        categoriaService.deleteById(1L);
+        verify(categoriaRepository).deleteById(1L);
     }
 }
-

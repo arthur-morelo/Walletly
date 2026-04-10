@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, Target, BookOpen, PieChart, Receipt, GraduationCap } from "lucide-react";
+import DarkModeToggle from './DarkModeToggle';
 
 function MenuComponent() {
   const [isOpen, setIsOpen] = useState(false);
@@ -81,7 +82,7 @@ function MenuComponent() {
               })}
             </ul>
           </nav>
-
+               <DarkModeToggle />
           {/* Footer do Menu */}
           <div className="p-4 border-t border-blue-800">
             <div className="text-center text-blue-300 text-sm">

@@ -15,7 +15,7 @@ function Start() {
     const navigate = useNavigate();
 
     return ( 
-        <div className="flex flex-col min-h-screen bg-[#f8fafc]">
+        <div className="flex flex-col min-h-screen bg-white dark:bg-slate-900 transition-colors duration-300">
             {/* Header seguindo a estética do Header.jsx */}
             <Header /> 
 

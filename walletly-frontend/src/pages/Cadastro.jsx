@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom"; // 1. Importe useNavigate e Link
 import Logo from "../assets/logo.jpg";
 import { Input } from "antd";
+import { register } from "../services/authService";
 
 function Cadastro() {
   const [nome, setNome] = useState("");
@@ -12,7 +13,7 @@ function Cadastro() {
 
   const navigate = useNavigate(); // 2. Inicialize o hook
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (password !== confirmPassword) {
@@ -20,13 +21,17 @@ function Cadastro() {
       return;
     }
 
-    console.log({ nome, email, password });
-    setMessage("Cadastro realizado com sucesso!");
+    try {
+      await register({ nome, username: email, email, password });
+      setMessage("Cadastro realizado com sucesso!");
 
-    // 3. Redireciona para o login após 2 segundos
-    setTimeout(() => {
-      navigate("/"); // Leva para a rota da página de login
-    }, 2000); // 2000 milissegundos = 2 segundos
+      // 3. Redireciona para o login após 2 segundos
+      setTimeout(() => {
+        navigate("/"); // Leva para a rota da página de login
+      }, 2000); // 2000 milissegundos = 2 segundos
+    } catch (error) {
+      setMessage("Erro ao realizar o cadastro. Tente novamente.");
+    }
   };
 
   return (

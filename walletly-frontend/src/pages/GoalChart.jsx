@@ -11,60 +11,75 @@ import {
 } from "recharts";
 import CustomTooltip from "../components/CustomTooltip.jsx";
 import Header from "../components/Header";
-
-const initialGoals = [
-  { id: 1, name: "Comprar um carro", goal: 45000, saved: 15000 },
-  { id: 2, name: "Viajar para a Europa", goal: 12000, saved: 8500 },
-  { id: 3, name: "Investir na faculdade", goal: 30000, saved: 5000 },
-];
+import api from "../services/api";
 
 const GoalTracker = () => {
-  const [goals, setGoals] = useState(initialGoals);
+  const [goals, setGoals] = useState([]);
   const [newGoal, setNewGoal] = useState({ name: "", goal: 0, saved: 0 });
 
-  const [selectedGoalId, setSelectedGoalId] = useState(
-    initialGoals.length > 0 ? initialGoals[0].id : null
-  );
+  const [selectedGoalId, setSelectedGoalId] = useState(null);
   const [amountToAdd, setAmountToAdd] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  const handleAddGoal = (e) => {
+  useEffect(() => {
+    carregarMetas();
+  }, []);
+
+  const carregarMetas = async () => {
+    try {
+      const response = await api.get("/goals"); // ou o endpoint de metas correspondente
+      setGoals(response.data.content || response.data || []);
+    } catch (error) {
+      console.error("Erro ao carregar metas", error);
+      // Fallback pra não quebrar a tela se a api não existir
+      setGoals([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddGoal = async (e) => {
     e.preventDefault();
     if (!newGoal.name || parseFloat(newGoal.goal) <= 0) return;
 
-    setGoals([
-      ...goals,
-      {
-        id: goals.length > 0 ? Math.max(...goals.map((g) => g.id)) + 1 : 1,
-        ...newGoal,
+    try {
+      await api.post("/goals", {
+        name: newGoal.name,
         goal: parseFloat(newGoal.goal),
-        saved: parseFloat(newGoal.saved),
-      },
-    ]);
-    setNewGoal({ name: "", goal: 0, saved: 0 });
+        saved: parseFloat(newGoal.saved) || 0
+      });
+      setNewGoal({ name: "", goal: 0, saved: 0 });
+      carregarMetas();
+    } catch (error) {
+      console.error("Erro ao adicionar meta", error);
+    }
   };
 
-  const handleUpdateGoal = (e) => {
+  const handleUpdateGoal = async (e) => {
     e.preventDefault();
     if (amountToAdd <= 0 || !selectedGoalId) return;
 
-    const updatedGoals = goals.map((goal) => {
-      if (goal.id === parseInt(selectedGoalId)) {
-        return {
-          ...goal,
-          saved: goal.saved + parseFloat(amountToAdd),
-        };
-      }
-      return goal;
-    });
-
-    setGoals(updatedGoals);
-    setAmountToAdd(0);
+    try {
+      await api.put(`/goals/${selectedGoalId}/add`, { amount: parseFloat(amountToAdd) });
+      setAmountToAdd(0);
+      carregarMetas();
+    } catch (error) {
+      console.error("Erro ao atualizar meta", error);
+    }
   };
 
-  const handleRemoveGoal = (goalIdToRemove) => {
-    const updatedGoals = goals.filter((goal) => goal.id !== goalIdToRemove);
-    setGoals(updatedGoals);
+  const handleRemoveGoal = async (goalIdToRemove) => {
+    try {
+      await api.delete(`/goals/${goalIdToRemove}`);
+      carregarMetas();
+    } catch (error) {
+      console.error("Erro ao remover meta", error);
+    }
   };
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen">Carregando metas...</div>;
+  }
 
   return (
     <div className="bg-gray-100 mx-auto">

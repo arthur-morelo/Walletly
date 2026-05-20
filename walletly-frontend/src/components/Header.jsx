@@ -4,9 +4,11 @@ import Menu from "./MenuComponent";
 import Icon from "../assets/icon.png";
 import { User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 const Header = () => {
-  const userName = "João Silva";
+  const { user } = useAuth();
+  const userName = user?.name || user?.nome || "Usuário";
 
   return (
     <header className="bg-gradient-to-r from-blue-950 via-blue-900 to-blue-950 text-white shadow-lg">

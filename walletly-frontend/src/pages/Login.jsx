@@ -2,20 +2,25 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom"; // 1. Importe useNavigate e Link
 import Logo from "../assets/logo.jpg";
 import { Input } from "antd";
+import { useAuth } from "../contexts/AuthContext";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const { signIn } = useAuth();
   const navigate = useNavigate(); // 2. Inicialize o hook
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
-    // 3. Lógica de navegação
-    if (email && password) {
+    try {
+      await signIn(email, password);
+      // Se o backend retornar sucesso e o cookie JWT for salvo:
       console.log("Login realizado, redirecionando...");
       navigate("/dashboard");
+    } catch (error) {
+      alert("Erro ao fazer login. Verifique suas credenciais.");
     }
   };
 

@@ -1,12 +1,45 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import Header from "../../components/Header";
-import { cursos } from "../../data/data";
+import { cursos as cursosMock } from "../../data/data";
 import CursoNotFound from "./CursoNotFound";
+import { getCursoById } from "../../services/cursoService";
 
 export default function Curso() {
   const { id } = useParams();
-  const curso = cursos.find((c) => c.id === parseInt(id));
+  const [curso, setCurso] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCurso = async () => {
+      try {
+        const response = await getCursoById(id);
+        if (response.data) {
+          setCurso(response.data);
+        } else {
+          // Fallback para mock local caso a API falhe mas não dispare catch
+          const local = cursosMock.find((c) => c.id === parseInt(id));
+          setCurso(local);
+        }
+      } catch (error) {
+        console.warn("Falha ao buscar curso da API, usando mock local.");
+        const local = cursosMock.find((c) => c.id === parseInt(id));
+        setCurso(local);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCurso();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <div className="container mx-auto px-4 py-12 text-center text-xl">Carregando curso...</div>
+      </>
+    );
+  }
 
   if (!curso) {
     return (

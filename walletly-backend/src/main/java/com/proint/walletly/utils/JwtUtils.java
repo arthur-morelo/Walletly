@@ -9,6 +9,7 @@ import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import com.proint.walletly.model.User;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -52,6 +53,11 @@ public class JwtUtils {
     
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
+        if (userDetails instanceof User) {
+            User user = (User) userDetails;
+            claims.put("user_id", user.getId());
+            claims.put("role", user.getRole().name());
+        }
         return createToken(claims, userDetails.getUsername());
     }
     

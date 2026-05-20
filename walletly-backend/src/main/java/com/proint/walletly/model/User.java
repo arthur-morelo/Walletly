@@ -9,8 +9,9 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
+import com.proint.walletly.model.enums.RoleEnum;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import org.hibernate.envers.Audited;
 import jakarta.validation.constraints.Email;
@@ -48,17 +49,17 @@ public class User implements UserDetails {
     
     @NotBlank
     @Size(max = 120)
+    @JsonIgnore
     private String password;
     
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-        name = "usuario_roles",
-        schema = "seguranca",
-        joinColumns = @JoinColumn(name = "usuario_fk"),
-        inverseJoinColumns = @JoinColumn(name = "role_fk")
-    )
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
     @Builder.Default
-    private Set<Role> roles = new HashSet<>();
+    private RoleEnum role = RoleEnum.FREE;
+
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
 
     public String getPassword() {
         return password;
@@ -73,21 +74,9 @@ public class User implements UserDetails {
         this.password = password;
     }
 
-    public void addRole(Role role) {
-        this.roles.add(role);
-        role.getUsers().add(this);
-    }
-    
-    public void removeRole(Role role) {
-        this.roles.remove(role);
-        role.getUsers().remove(this);
-    }
-    
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return roles.stream()
-                .map(role -> new SimpleGrantedAuthority(role.getNome()))
-                .toList();
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
     
     @Override
@@ -100,6 +89,6 @@ public class User implements UserDetails {
     public boolean isCredentialsNonExpired() { return true; }
     
     @Override
-    public boolean isEnabled() { return true; }
+    public boolean isEnabled() { return this.isActive != null ? this.isActive : true; }
     
 }

@@ -1,8 +1,7 @@
 package com.proint.walletly.service;
 
-import com.proint.walletly.model.Role;
+import com.proint.walletly.model.enums.RoleEnum;
 import com.proint.walletly.model.User;
-import com.proint.walletly.repository.RoleRepository;
 import com.proint.walletly.repository.UserRepository;
 import com.proint.walletly.utils.JwtUtils;
 import com.proint.walletly.utils.LoginRequest;
@@ -18,9 +17,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.util.HashSet;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,32 +38,23 @@ class AuthServiceTest {
     @Mock
     private JwtUtils jwtUtils;
 
-    @Mock
-    private RoleService roleService;
-
-    @Mock
-    private RoleRepository roleRepository;
-
     @InjectMocks
     private AuthService authService;
 
     private User testUser;
-    private Role testRole;
     private LoginRequest loginRequest;
     private SignupRequest signupRequest;
 
     @BeforeEach
     void setUp() {
-        testRole = new Role("ROLE_USER");
-        testRole.setId(1L);
-
         testUser = User.builder()
                 .id(1L)
                 .username("testuser")
                 .nome("Test User")
                 .email("test@example.com")
                 .password("encodedPassword")
-                .roles(new HashSet<>(Set.of(testRole)))
+                .role(RoleEnum.FREE)
+                .isActive(true)
                 .build();
 
         loginRequest = new LoginRequest("testuser", "password");
@@ -103,14 +90,11 @@ class AuthServiceTest {
 
     @Test
     void register_ShouldReturnSuccessMessage_WhenUserDoesNotExist() {
-        Role userRole = new Role("ROLE_USER");
-        userRole.setId(1L);
         String encodedPassword = "encodedPassword";
 
         when(userRepository.existsByUsername(signupRequest.username())).thenReturn(false);
         when(userRepository.existsByEmail(signupRequest.email())).thenReturn(false);
         when(passwordEncoder.encode(signupRequest.password())).thenReturn(encodedPassword);
-        when(roleService.createRoleIfNotExists("ROLE_USER")).thenReturn(userRole);
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         String result = authService.register(signupRequest);
@@ -119,7 +103,6 @@ class AuthServiceTest {
         verify(userRepository).existsByUsername(signupRequest.username());
         verify(userRepository).existsByEmail(signupRequest.email());
         verify(passwordEncoder).encode(signupRequest.password());
-        verify(roleService).createRoleIfNotExists("ROLE_USER");
         verify(userRepository).save(any(User.class));
     }
 
@@ -144,29 +127,6 @@ class AuthServiceTest {
         verify(userRepository).existsByUsername(signupRequest.username());
         verify(userRepository).existsByEmail(signupRequest.email());
         verify(userRepository, never()).save(any(User.class));
-    }
-
-    @Test
-    void register_ShouldAssignDefaultRole_WhenUserIsCreated() {
-        Role userRole = new Role("ROLE_USER");
-        userRole.setId(1L);
-        String encodedPassword = "encodedPassword";
-
-        when(userRepository.existsByUsername(signupRequest.username())).thenReturn(false);
-        when(userRepository.existsByEmail(signupRequest.email())).thenReturn(false);
-        when(passwordEncoder.encode(signupRequest.password())).thenReturn(encodedPassword);
-        when(roleService.createRoleIfNotExists("ROLE_USER")).thenReturn(userRole);
-        when(roleRepository.findByNome("ROLE_USER")).thenReturn(java.util.Optional.of(userRole));
-        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
-            User user = invocation.getArgument(0);
-            assertTrue(user.getAuthorities().contains(userRole));
-            return user;
-        });
-
-        authService.register(signupRequest);
-
-        verify(roleService).createRoleIfNotExists("ROLE_USER");
-        verify(userRepository).save(any(User.class));
     }
 }
 

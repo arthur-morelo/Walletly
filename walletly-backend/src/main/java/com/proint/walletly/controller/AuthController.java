@@ -1,5 +1,11 @@
 package com.proint.walletly.controller;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import com.proint.walletly.model.User;
+import com.proint.walletly.repository.UserRepository;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -23,15 +29,19 @@ import jakarta.validation.Valid;
 public class AuthController {
     
     private final AuthService authService;
+    private final UserRepository userRepository;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, UserRepository userRepository) {
         this.authService = authService;
+        this.userRepository = userRepository;
     }
     
     @PostMapping("/login")
-    public ResponseEntity<String> login(@Valid @RequestBody LoginRequest loginRequest, HttpServletResponse response) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest, HttpServletResponse response) {
         try {
             String jwtToken = authService.login(loginRequest);
+            User user = userRepository.findByEmail(loginRequest.email())
+                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
             
             ResponseCookie cookie = ResponseCookie.from("jwt", jwtToken)
                     .httpOnly(false)
@@ -41,14 +51,20 @@ public class AuthController {
                     .sameSite("None")
                     .build();
             
-            System.out.println("Setting cookie: " + cookie.toString());
-            System.out.println("JWT Token: " + jwtToken);
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("token", jwtToken);
+            Map<String, Object> userInfo = new HashMap<>();
+            userInfo.put("id", user.getId());
+            userInfo.put("name", user.getNome());
+            userInfo.put("email", user.getEmail());
+            userInfo.put("role", user.getRole());
+            responseBody.put("user", userInfo);
             
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                    .body("Login successful");
+                    .body(responseBody);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Login failed: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", "Login failed: " + e.getMessage()));
         }
     }
     

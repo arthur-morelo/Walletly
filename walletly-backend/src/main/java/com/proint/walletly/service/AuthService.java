@@ -8,7 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.proint.walletly.model.Role;
+import com.proint.walletly.model.enums.RoleEnum;
 import com.proint.walletly.model.User;
 import com.proint.walletly.repository.UserRepository;
 import com.proint.walletly.utils.JwtUtils;
@@ -26,21 +26,18 @@ public class AuthService {
     
     private final JwtUtils jwtUtil;
     
-    private final RoleService roleService;
-
-    public AuthService(AuthenticationManager authenticationManager, UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtils jwtUtil, RoleService roleService) {
+    public AuthService(AuthenticationManager authenticationManager, UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtils jwtUtil) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
-        this.roleService = roleService;
     }
 
     @Transactional
     public String login(LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        loginRequest.username(), 
+                        loginRequest.email(), 
                         loginRequest.password())
         );
         
@@ -62,10 +59,9 @@ public class AuthService {
                 .nome(signupRequest.nome())
                 .email(signupRequest.email())
                 .password(passwordEncoder.encode(signupRequest.password()))
+                .role(RoleEnum.FREE)
+                .isActive(true)
                 .build();
-        
-        Role userRole = roleService.createRoleIfNotExists("ROLE_USER");
-        user.addRole(userRole);
         
         userRepository.save(user);
         return "User registered successfully!";

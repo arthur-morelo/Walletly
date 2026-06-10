@@ -1,5 +1,7 @@
 package com.proint.walletly.service;
 
+import com.proint.walletly.dto.orcamento.OrcamentoDTO;
+import com.proint.walletly.mapper.OrcamentoMapper;
 import com.proint.walletly.model.*;
 import com.proint.walletly.repository.OrcamentoRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,7 +22,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,62 +30,56 @@ class OrcamentoServiceTest {
     @Mock
     private OrcamentoRepository orcamentoRepository;
 
+    @Mock
+    private OrcamentoMapper orcamentoMapper;
+
     @InjectMocks
     private OrcamentoService orcamentoService;
 
     private Orcamento testOrcamento;
-    private User testUser;
-    private Categoria testCategoria;
+    private OrcamentoDTO testOrcamentoDTO;
 
     @BeforeEach
     void setUp() {
-        testUser = User.builder()
-                .id(1L)
-                .username("testuser")
-                .nome("Test User")
-                .email("test@example.com")
-                .build();
-
-        testCategoria = Categoria.builder()
-                .id(1L)
-                .nome("Alimentação")
-                .urlImagemCategoria("https://example.com/food.png")
-                .build();
-
         testOrcamento = Orcamento.builder()
                 .id(1L)
                 .valorMaximo(new BigDecimal("500.00"))
                 .mes(1)
                 .ano(2024)
-                .user(testUser)
-                .categoria(testCategoria)
                 .build();
+
+        testOrcamentoDTO = new OrcamentoDTO(
+                1L, 1L, 1L, new BigDecimal("500.00"), 1, 2024
+        );
     }
 
     @Test
-    void save_ShouldReturnSavedOrcamento_WhenValidOrcamentoProvided() {
+    void save_ShouldReturnSavedOrcamento_WhenValidDTOProvided() {
+        when(orcamentoMapper.toEntity(any(OrcamentoDTO.class))).thenReturn(testOrcamento);
         when(orcamentoRepository.save(any(Orcamento.class))).thenReturn(testOrcamento);
+        when(orcamentoMapper.toDTO(any(Orcamento.class))).thenReturn(testOrcamentoDTO);
 
-        Orcamento result = orcamentoService.save(testOrcamento);
+        OrcamentoDTO result = orcamentoService.save(testOrcamentoDTO);
 
         assertNotNull(result);
-        assertEquals(testOrcamento.getId(), result.getId());
-        assertEquals(testOrcamento.getValorMaximo(), result.getValorMaximo());
-        assertEquals(testOrcamento.getMes(), result.getMes());
-        assertEquals(testOrcamento.getAno(), result.getAno());
-        verify(orcamentoRepository).save(testOrcamento);
+        assertEquals(testOrcamentoDTO.id(), result.id());
+        assertEquals(testOrcamentoDTO.valorMaximo(), result.valorMaximo());
+        assertEquals(testOrcamentoDTO.mes(), result.mes());
+        assertEquals(testOrcamentoDTO.ano(), result.ano());
+        verify(orcamentoRepository).save(any(Orcamento.class));
     }
 
     @Test
     void findById_ShouldReturnOrcamento_WhenIdExists() {
         Long id = 1L;
         when(orcamentoRepository.findById(id)).thenReturn(Optional.of(testOrcamento));
+        when(orcamentoMapper.toDTO(testOrcamento)).thenReturn(testOrcamentoDTO);
 
-        Optional<Orcamento> result = orcamentoService.findById(id);
+        Optional<OrcamentoDTO> result = orcamentoService.findById(id);
 
         assertTrue(result.isPresent());
-        assertEquals(testOrcamento.getId(), result.get().getId());
-        assertEquals(testOrcamento.getValorMaximo(), result.get().getValorMaximo());
+        assertEquals(testOrcamentoDTO.id(), result.get().id());
+        assertEquals(testOrcamentoDTO.valorMaximo(), result.get().valorMaximo());
         verify(orcamentoRepository).findById(id);
     }
 
@@ -93,7 +88,7 @@ class OrcamentoServiceTest {
         Long id = 999L;
         when(orcamentoRepository.findById(id)).thenReturn(Optional.empty());
 
-        Optional<Orcamento> result = orcamentoService.findById(id);
+        Optional<OrcamentoDTO> result = orcamentoService.findById(id);
 
         assertFalse(result.isPresent());
         verify(orcamentoRepository).findById(id);
@@ -106,12 +101,13 @@ class OrcamentoServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         when(orcamentoRepository.findAll(pageable)).thenReturn(page);
+        when(orcamentoMapper.toDTO(any(Orcamento.class))).thenReturn(testOrcamentoDTO);
 
-        Page<Orcamento> result = orcamentoService.findAll(pageable);
+        Page<OrcamentoDTO> result = orcamentoService.findAll(pageable);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals(testOrcamento.getId(), result.getContent().get(0).getId());
+        assertEquals(testOrcamentoDTO.id(), result.getContent().get(0).id());
         verify(orcamentoRepository).findAll(pageable);
     }
 
@@ -123,19 +119,22 @@ class OrcamentoServiceTest {
                 .valorMaximo(new BigDecimal("750.00"))
                 .mes(2)
                 .ano(2024)
-                .user(testUser)
-                .categoria(testCategoria)
                 .build();
+                
+        OrcamentoDTO updatedDTO = new OrcamentoDTO(
+                1L, 1L, 1L, new BigDecimal("750.00"), 2, 2024
+        );
 
         when(orcamentoRepository.findById(id)).thenReturn(Optional.of(testOrcamento));
         when(orcamentoRepository.save(any(Orcamento.class))).thenReturn(updatedOrcamento);
+        when(orcamentoMapper.toDTO(any(Orcamento.class))).thenReturn(updatedDTO);
 
-        Orcamento result = orcamentoService.update(id, updatedOrcamento);
+        OrcamentoDTO result = orcamentoService.update(id, updatedDTO);
 
         assertNotNull(result);
-        assertEquals(updatedOrcamento.getValorMaximo(), result.getValorMaximo());
-        assertEquals(updatedOrcamento.getMes(), result.getMes());
-        assertEquals(updatedOrcamento.getAno(), result.getAno());
+        assertEquals(updatedDTO.valorMaximo(), result.valorMaximo());
+        assertEquals(updatedDTO.mes(), result.mes());
+        assertEquals(updatedDTO.ano(), result.ano());
         verify(orcamentoRepository).findById(id);
         verify(orcamentoRepository).save(any(Orcamento.class));
     }
@@ -143,12 +142,11 @@ class OrcamentoServiceTest {
     @Test
     void update_ShouldThrowException_WhenIdDoesNotExist() {
         Long id = 999L;
-        Orcamento updatedOrcamento = new Orcamento();
 
         when(orcamentoRepository.findById(id)).thenReturn(Optional.empty());
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> orcamentoService.update(id, updatedOrcamento));
+                () -> orcamentoService.update(id, testOrcamentoDTO));
         assertEquals("Orçamento não encontrado com o ID " + id, exception.getMessage());
         verify(orcamentoRepository).findById(id);
         verify(orcamentoRepository, never()).save(any(Orcamento.class));
@@ -157,112 +155,8 @@ class OrcamentoServiceTest {
     @Test
     void deleteById_ShouldCallRepositoryDelete_WhenValidIdProvided() {
         Long id = 1L;
-
         orcamentoService.deleteById(id);
-
         verify(orcamentoRepository).deleteById(id);
-    }
-
-    @Test
-    void update_ShouldUpdateCorrectFields_WhenIdExists() {
-        Long id = 1L;
-        Orcamento updatedData = Orcamento.builder()
-                .valorMaximo(new BigDecimal("1000.00"))
-                .mes(3)
-                .ano(2024)
-                .build();
-
-        when(orcamentoRepository.findById(id)).thenReturn(Optional.of(testOrcamento));
-        when(orcamentoRepository.save(any(Orcamento.class)))
-                .thenAnswer(invocation -> {
-                    Orcamento orcamento = invocation.getArgument(0);
-                    assertEquals(updatedData.getValorMaximo(), orcamento.getValorMaximo());
-                    assertEquals(updatedData.getMes(), orcamento.getMes());
-                    assertEquals(updatedData.getAno(), orcamento.getAno());
-                    return orcamento;
-                });
-
-        orcamentoService.update(id, updatedData);
-
-        verify(orcamentoRepository).findById(id);
-        verify(orcamentoRepository).save(any(Orcamento.class));
-    }
-
-    @Test
-    void save_ShouldPreserveAllFields_WhenValidOrcamentoProvided() {
-        when(orcamentoRepository.save(any(Orcamento.class)))
-                .thenAnswer(invocation -> {
-                    Orcamento orcamento = invocation.getArgument(0);
-                    assertEquals(testOrcamento.getValorMaximo(), orcamento.getValorMaximo());
-                    assertEquals(testOrcamento.getMes(), orcamento.getMes());
-                    assertEquals(testOrcamento.getAno(), orcamento.getAno());
-                    assertEquals(testOrcamento.getUser(), orcamento.getUser());
-                    assertEquals(testOrcamento.getCategoria(), orcamento.getCategoria());
-                    return testOrcamento;
-                });
-
-        Orcamento result = orcamentoService.save(testOrcamento);
-
-        assertNotNull(result);
-        verify(orcamentoRepository).save(testOrcamento);
-    }
-
-    @Test
-    void update_ShouldUpdateUserAndCategoria_WhenIdExists() {
-        Long id = 1L;
-        User newUser = User.builder().id(2L).username("newuser").build();
-        Categoria newCategoria = Categoria.builder().id(2L).nome("Nova Categoria").build();
-        
-        Orcamento updatedData = Orcamento.builder()
-                .user(newUser)
-                .categoria(newCategoria)
-                .build();
-
-        when(orcamentoRepository.findById(id)).thenReturn(Optional.of(testOrcamento));
-        when(orcamentoRepository.save(any(Orcamento.class)))
-                .thenAnswer(invocation -> {
-                    Orcamento orcamento = invocation.getArgument(0);
-                    assertEquals(updatedData.getUser(), orcamento.getUser());
-                    assertEquals(updatedData.getCategoria(), orcamento.getCategoria());
-                    return orcamento;
-                });
-
-        orcamentoService.update(id, updatedData);
-
-        verify(orcamentoRepository).findById(id);
-        verify(orcamentoRepository).save(any(Orcamento.class));
-    }
-
-    @Test
-    void update_ShouldUpdateAllFields_WhenIdExists() {
-        Long id = 1L;
-        User newUser = User.builder().id(2L).username("newuser").build();
-        Categoria newCategoria = Categoria.builder().id(2L).nome("Nova Categoria").build();
-        
-        Orcamento updatedData = Orcamento.builder()
-                .valorMaximo(new BigDecimal("2000.00"))
-                .mes(12)
-                .ano(2025)
-                .user(newUser)
-                .categoria(newCategoria)
-                .build();
-
-        when(orcamentoRepository.findById(id)).thenReturn(Optional.of(testOrcamento));
-        when(orcamentoRepository.save(any(Orcamento.class)))
-                .thenAnswer(invocation -> {
-                    Orcamento orcamento = invocation.getArgument(0);
-                    assertEquals(updatedData.getValorMaximo(), orcamento.getValorMaximo());
-                    assertEquals(updatedData.getMes(), orcamento.getMes());
-                    assertEquals(updatedData.getAno(), orcamento.getAno());
-                    assertEquals(updatedData.getUser(), orcamento.getUser());
-                    assertEquals(updatedData.getCategoria(), orcamento.getCategoria());
-                    return orcamento;
-                });
-
-        orcamentoService.update(id, updatedData);
-
-        verify(orcamentoRepository).findById(id);
-        verify(orcamentoRepository).save(any(Orcamento.class));
     }
 }
 

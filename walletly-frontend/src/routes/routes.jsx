@@ -23,8 +23,8 @@ const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/">
       <Route index element={<Start />} />
-      
-      <Route path="perfil" element={<ProtectedRoute><Perfil/></ProtectedRoute>} />
+
+      <Route path="perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
 
       <Route path="cadastro" element={<Cadastro />} />
 
@@ -37,7 +37,7 @@ const router = createBrowserRouter(
       <Route path="metas" element={<ProtectedRoute><Metas /></ProtectedRoute>} />
 
       <Route path="cursos" element={<ProtectedRoute><PlanRoute><CursosList /></PlanRoute></ProtectedRoute>} />
-      
+
       <Route path="cursos/:id" element={<ProtectedRoute><PlanRoute><Curso /></PlanRoute></ProtectedRoute>} />
 
       <Route path="planos" element={<ProtectedRoute><Planos /></ProtectedRoute>} />

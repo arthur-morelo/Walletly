@@ -25,48 +25,86 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private CustomUserDetailsService userDetailsService;
     
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getServletPath();
+        // Ignora qualquer rota que contenha "/auth/" (login, register, etc)
+        return path.contains("/auth/");
+    }
+    
+    @Override
     protected void doFilterInternal(HttpServletRequest request, 
                                   HttpServletResponse response, 
                                   FilterChain filterChain) throws ServletException, IOException {
         
-        String username = null;
-        String jwt = null;
-        
-        // Try to get JWT from cookie first
-        if (request.getCookies() != null) {
-            for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
-                if ("jwt".equals(cookie.getName())) {
-                    jwt = cookie.getValue();
-                    break;
+        String path = request.getServletPath();
+        if (path.contains("/auth/")) {
+            System.out.println("[JWT-DEBUG] Bypass absoluto ativado para rota pública: " + path);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        try {
+            System.out.println("========== DEBUG JWT FILTER ==========");
+            System.out.println("Header Auth: " + request.getHeader("Authorization"));
+            System.out.println("Content Type: " + request.getContentType());
+            System.out.println("Method: " + request.getMethod());
+            System.out.println("URI: " + request.getRequestURI());
+            System.out.println("======================================");
+            
+            final String authorizationHeader = request.getHeader("Authorization");
+
+            // Ignora requisições de preflight (CORS)
+            if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+                System.out.println("[JWT-DEBUG] Ignorando requisição OPTIONS.");
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            String username = null;
+            String jwt = null;
+            
+            // 1. Tenta extrair o token do cabeçalho Authorization PRIMEIRO
+            if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ") && authorizationHeader.length() > 7) {
+                jwt = authorizationHeader.substring(7).trim();
+                System.out.println("[JWT-DEBUG] Token extraído do cabeçalho Authorization.");
+            } else {
+                System.out.println("[JWT-DEBUG] Cabeçalho Authorization ausente ou inválido. Verificando Cookies...");
+            }
+            
+            // 2. Fallback para os Cookies caso não exista header Authorization
+            if (jwt == null && request.getCookies() != null) {
+                for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+                    if ("jwt".equals(cookie.getName())) {
+                        jwt = cookie.getValue();
+                        System.out.println("[JWT-DEBUG] Token extraído do Cookie.");
+                        break;
+                    }
                 }
             }
-        }
-        
-        // Fallback to Authorization header if no cookie found
-        if (jwt == null) {
-            final String authorizationHeader = request.getHeader("Authorization");
-            if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-                jwt = authorizationHeader.substring(7);
-            }
-        }
-        
-        if (jwt != null) {
-            try {
-                username = jwtUtil.extractUsername(jwt);
-            } catch (Exception e) {
-                logger.error("Cannot get JWT Token", e);
-            }
-        }
-        
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
             
-            if (jwtUtil.validateToken(jwt, userDetails)) {
-                UsernamePasswordAuthenticationToken authToken = 
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+            if (jwt != null) {
+                try {
+                    username = jwtUtil.extractUsername(jwt);
+                } catch (Exception e) {
+                    System.err.println("[JWT-ERROR] Erro ao extrair username do token (pode estar expirado): " + e.getMessage());
+                }
             }
+            
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+                
+                if (jwtUtil.validateToken(jwt, userDetails)) {
+                    UsernamePasswordAuthenticationToken authToken = 
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    System.out.println("[JWT-SUCCESS] Usuário autenticado com sucesso: " + username + " na rota " + request.getRequestURI());
+                } else {
+                    System.err.println("[JWT-ERROR] Token inválido para o usuário: " + username);
+                }
+            }
+        } catch (Exception ex) {
+            System.err.println("[JWT-CRITICAL] Exceção na extração do token, prosseguindo sem autenticação: " + ex.getMessage());
         }
         
         filterChain.doFilter(request, response);

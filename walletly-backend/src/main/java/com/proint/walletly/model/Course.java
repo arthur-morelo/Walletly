@@ -5,7 +5,7 @@ import lombok.*;
 import org.hibernate.envers.Audited;
 
 @Entity
-@Table(name = "course")
+@Table(name = "course", schema = "seguranca")
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder

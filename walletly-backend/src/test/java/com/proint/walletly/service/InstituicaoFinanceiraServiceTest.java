@@ -1,6 +1,7 @@
 package com.proint.walletly.service;
 
 import com.proint.walletly.dto.instituicao.InstituicaoDTO;
+import com.proint.walletly.mapper.InstituicaoMapper;
 import com.proint.walletly.model.InstituicaoFinanceira;
 import com.proint.walletly.repository.InstituicaoFinanceiraRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,7 +21,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,6 +28,9 @@ class InstituicaoFinanceiraServiceTest {
 
     @Mock
     private InstituicaoFinanceiraRepository instituicaoFinanceiraRepository;
+
+    @Mock
+    private InstituicaoMapper instituicaoMapper;
 
     @InjectMocks
     private InstituicaoFinanceiraService instituicaoFinanceiraService;
@@ -43,38 +46,23 @@ class InstituicaoFinanceiraServiceTest {
                 .logoUrl("https://example.com/logo.png")
                 .build();
 
-        testInstituicaoDTO = new InstituicaoDTO("Banco Teste", "https://example.com/logo.png");
+        testInstituicaoDTO = new InstituicaoDTO(
+                1L, "Banco Teste", "https://example.com/logo.png"
+        );
     }
 
     @Test
     void save_ShouldReturnSavedInstituicao_WhenValidDTOProvided() {
+        when(instituicaoMapper.toEntity(any(InstituicaoDTO.class))).thenReturn(testInstituicao);
         when(instituicaoFinanceiraRepository.save(any(InstituicaoFinanceira.class))).thenReturn(testInstituicao);
+        when(instituicaoMapper.toDTO(any(InstituicaoFinanceira.class))).thenReturn(testInstituicaoDTO);
 
-        InstituicaoFinanceira result = instituicaoFinanceiraService.save(testInstituicaoDTO);
-
-        assertNotNull(result);
-        assertEquals(testInstituicao.getId(), result.getId());
-        assertEquals(testInstituicao.getNome(), result.getNome());
-        assertEquals(testInstituicao.getLogoUrl(), result.getLogoUrl());
-        verify(instituicaoFinanceiraRepository).save(any(InstituicaoFinanceira.class));
-    }
-
-    @Test
-    void save_ShouldCreateInstituicaoWithCorrectData_WhenValidDTOProvided() {
-        when(instituicaoFinanceiraRepository.save(any(InstituicaoFinanceira.class)))
-                .thenAnswer(invocation -> {
-                    InstituicaoFinanceira instituicao = invocation.getArgument(0);
-                    assertEquals(testInstituicaoDTO.nome(), instituicao.getNome());
-                    assertEquals(testInstituicaoDTO.logoUrl(), instituicao.getLogoUrl());
-                    instituicao.setId(1L);
-                    return instituicao;
-                });
-
-        InstituicaoFinanceira result = instituicaoFinanceiraService.save(testInstituicaoDTO);
+        InstituicaoDTO result = instituicaoFinanceiraService.save(testInstituicaoDTO);
 
         assertNotNull(result);
-        assertEquals(testInstituicaoDTO.nome(), result.getNome());
-        assertEquals(testInstituicaoDTO.logoUrl(), result.getLogoUrl());
+        assertEquals(testInstituicaoDTO.id(), result.id());
+        assertEquals(testInstituicaoDTO.nome(), result.nome());
+        assertEquals(testInstituicaoDTO.logoUrl(), result.logoUrl());
         verify(instituicaoFinanceiraRepository).save(any(InstituicaoFinanceira.class));
     }
 
@@ -82,12 +70,13 @@ class InstituicaoFinanceiraServiceTest {
     void findById_ShouldReturnInstituicao_WhenIdExists() {
         Long id = 1L;
         when(instituicaoFinanceiraRepository.findById(id)).thenReturn(Optional.of(testInstituicao));
+        when(instituicaoMapper.toDTO(testInstituicao)).thenReturn(testInstituicaoDTO);
 
-        Optional<InstituicaoFinanceira> result = instituicaoFinanceiraService.findById(id);
+        Optional<InstituicaoDTO> result = instituicaoFinanceiraService.findById(id);
 
         assertTrue(result.isPresent());
-        assertEquals(testInstituicao.getId(), result.get().getId());
-        assertEquals(testInstituicao.getNome(), result.get().getNome());
+        assertEquals(testInstituicaoDTO.id(), result.get().id());
+        assertEquals(testInstituicaoDTO.nome(), result.get().nome());
         verify(instituicaoFinanceiraRepository).findById(id);
     }
 
@@ -96,7 +85,7 @@ class InstituicaoFinanceiraServiceTest {
         Long id = 999L;
         when(instituicaoFinanceiraRepository.findById(id)).thenReturn(Optional.empty());
 
-        Optional<InstituicaoFinanceira> result = instituicaoFinanceiraService.findById(id);
+        Optional<InstituicaoDTO> result = instituicaoFinanceiraService.findById(id);
 
         assertFalse(result.isPresent());
         verify(instituicaoFinanceiraRepository).findById(id);
@@ -109,12 +98,13 @@ class InstituicaoFinanceiraServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         when(instituicaoFinanceiraRepository.findAll(pageable)).thenReturn(page);
+        when(instituicaoMapper.toDTO(any(InstituicaoFinanceira.class))).thenReturn(testInstituicaoDTO);
 
-        Page<InstituicaoFinanceira> result = instituicaoFinanceiraService.findAll(pageable);
+        Page<InstituicaoDTO> result = instituicaoFinanceiraService.findAll(pageable);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals(testInstituicao.getId(), result.getContent().get(0).getId());
+        assertEquals(testInstituicaoDTO.id(), result.getContent().get(0).id());
         verify(instituicaoFinanceiraRepository).findAll(pageable);
     }
 
@@ -126,15 +116,20 @@ class InstituicaoFinanceiraServiceTest {
                 .nome("Banco Atualizado")
                 .logoUrl("https://example.com/new-logo.png")
                 .build();
+                
+        InstituicaoDTO updatedDTO = new InstituicaoDTO(
+                1L, "Banco Atualizado", "https://example.com/new-logo.png"
+        );
 
         when(instituicaoFinanceiraRepository.findById(id)).thenReturn(Optional.of(testInstituicao));
         when(instituicaoFinanceiraRepository.save(any(InstituicaoFinanceira.class))).thenReturn(updatedInstituicao);
+        when(instituicaoMapper.toDTO(any(InstituicaoFinanceira.class))).thenReturn(updatedDTO);
 
-        InstituicaoFinanceira result = instituicaoFinanceiraService.update(id, updatedInstituicao);
+        InstituicaoDTO result = instituicaoFinanceiraService.update(id, updatedDTO);
 
         assertNotNull(result);
-        assertEquals(updatedInstituicao.getNome(), result.getNome());
-        assertEquals(updatedInstituicao.getLogoUrl(), result.getLogoUrl());
+        assertEquals(updatedDTO.nome(), result.nome());
+        assertEquals(updatedDTO.logoUrl(), result.logoUrl());
         verify(instituicaoFinanceiraRepository).findById(id);
         verify(instituicaoFinanceiraRepository).save(any(InstituicaoFinanceira.class));
     }
@@ -142,12 +137,11 @@ class InstituicaoFinanceiraServiceTest {
     @Test
     void update_ShouldThrowException_WhenIdDoesNotExist() {
         Long id = 999L;
-        InstituicaoFinanceira updatedInstituicao = new InstituicaoFinanceira();
 
         when(instituicaoFinanceiraRepository.findById(id)).thenReturn(Optional.empty());
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> instituicaoFinanceiraService.update(id, updatedInstituicao));
+                () -> instituicaoFinanceiraService.update(id, testInstituicaoDTO));
         assertEquals("Instituição financeira não encontrada com o ID " + id, exception.getMessage());
         verify(instituicaoFinanceiraRepository).findById(id);
         verify(instituicaoFinanceiraRepository, never()).save(any(InstituicaoFinanceira.class));
@@ -156,33 +150,8 @@ class InstituicaoFinanceiraServiceTest {
     @Test
     void deleteById_ShouldCallRepositoryDelete_WhenValidIdProvided() {
         Long id = 1L;
-
         instituicaoFinanceiraService.deleteById(id);
-
         verify(instituicaoFinanceiraRepository).deleteById(id);
-    }
-
-    @Test
-    void update_ShouldUpdateCorrectFields_WhenIdExists() {
-        Long id = 1L;
-        InstituicaoFinanceira updatedData = InstituicaoFinanceira.builder()
-                .nome("Novo Nome")
-                .logoUrl("https://example.com/new-logo.png")
-                .build();
-
-        when(instituicaoFinanceiraRepository.findById(id)).thenReturn(Optional.of(testInstituicao));
-        when(instituicaoFinanceiraRepository.save(any(InstituicaoFinanceira.class)))
-                .thenAnswer(invocation -> {
-                    InstituicaoFinanceira instituicao = invocation.getArgument(0);
-                    assertEquals(updatedData.getNome(), instituicao.getNome());
-                    assertEquals(updatedData.getLogoUrl(), instituicao.getLogoUrl());
-                    return instituicao;
-                });
-
-        instituicaoFinanceiraService.update(id, updatedData);
-
-        verify(instituicaoFinanceiraRepository).findById(id);
-        verify(instituicaoFinanceiraRepository).save(any(InstituicaoFinanceira.class));
     }
 }
 

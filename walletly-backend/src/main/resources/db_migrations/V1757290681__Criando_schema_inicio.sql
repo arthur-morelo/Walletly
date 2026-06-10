@@ -48,8 +48,8 @@ CREATE TABLE if not exists geral.transacao (
 
 CREATE TABLE if not exists geral.orcamento (
     id BIGSERIAL PRIMARY KEY,
-    fk_usuario INTEGER NOT NULL,
-    fk_categoria INTEGER NOT NULL,
+    fk_usuario BIGINT NOT NULL,
+    fk_categoria BIGINT NOT NULL,
     valor_maximo DECIMAL(15, 2) NOT NULL,
     mes INTEGER NOT NULL,
     ano INTEGER NOT NULL,

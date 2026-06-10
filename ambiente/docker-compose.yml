@@ -10,6 +10,11 @@ services:
       POSTGRES_PASSWORD: 'postgres'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d walletlydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - walletly-network
 
@@ -21,9 +26,10 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/walletly
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/walletlydb
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
     networks:

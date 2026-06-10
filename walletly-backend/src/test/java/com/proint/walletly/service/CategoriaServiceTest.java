@@ -55,24 +55,24 @@ class CategoriaServiceTest {
         // Configura o comportamento do Mapper e Repository
         when(categoriaMapper.toEntity(any(CategoriaDTO.class))).thenReturn(testCategoria);
         when(categoriaRepository.save(any(Categoria.class))).thenReturn(testCategoria);
-        when(categoriaMapper.toDto(any(Categoria.class))).thenReturn(testCategoriaDTO);
+        when(categoriaMapper.toDTO(any(Categoria.class))).thenReturn(testCategoriaDTO);
 
         CategoriaDTO result = categoriaService.save(testCategoriaDTO);
 
         assertNotNull(result);
-        assertEquals(testCategoriaDTO.getId(), result.getId());
+        assertEquals(testCategoriaDTO.id(), result.id());
         verify(categoriaRepository).save(any(Categoria.class));
     }
 
     @Test
     void findById_ShouldReturnCategoria_WhenIdExists() {
         when(categoriaRepository.findById(1L)).thenReturn(Optional.of(testCategoria));
-        when(categoriaMapper.toDto(testCategoria)).thenReturn(testCategoriaDTO);
+        when(categoriaMapper.toDTO(testCategoria)).thenReturn(testCategoriaDTO);
 
         Optional<CategoriaDTO> result = categoriaService.findById(1L);
 
         assertTrue(result.isPresent());
-        assertEquals(testCategoriaDTO.getNome(), result.get().getNome());
+        assertEquals(testCategoriaDTO.nome(), result.get().nome());
     }
 
     @Test
@@ -90,13 +90,13 @@ class CategoriaServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         when(categoriaRepository.findAll(pageable)).thenReturn(page);
-        when(categoriaMapper.toDto(any(Categoria.class))).thenReturn(testCategoriaDTO);
+        when(categoriaMapper.toDTO(any(Categoria.class))).thenReturn(testCategoriaDTO);
 
         Page<CategoriaDTO> result = categoriaService.findAll(pageable);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals(testCategoriaDTO.getId(), result.getContent().get(0).getId());
+        assertEquals(testCategoriaDTO.id(), result.getContent().get(0).id());
     }
 
     @Test
@@ -107,12 +107,12 @@ class CategoriaServiceTest {
 
         when(categoriaRepository.findById(id)).thenReturn(Optional.of(testCategoria));
         when(categoriaRepository.save(any(Categoria.class))).thenReturn(updatedCategoria);
-        when(categoriaMapper.toDto(any(Categoria.class))).thenReturn(updatedDTO);
+        when(categoriaMapper.toDTO(any(Categoria.class))).thenReturn(updatedDTO);
 
         CategoriaDTO result = categoriaService.update(id, updatedDTO);
 
         assertNotNull(result);
-        assertEquals("Transporte", result.getNome());
+        assertEquals("Transporte", result.nome());
     }
 
     @Test

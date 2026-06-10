@@ -7,8 +7,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.util.Optional;
-
 @Component
 public class DataInitializer implements CommandLineRunner {
 
@@ -22,40 +20,17 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        String adminEmail = "arthurmorelo@gmail.com";
-        Optional<User> adminUserOpt = userRepository.findByEmail(adminEmail);
-
-        if (adminUserOpt.isPresent()) {
-            User adminUser = adminUserOpt.get();
-            boolean changed = false;
+        if (!userRepository.existsByEmail("arthurmorelo@gmail.com")) {
+            User admin = new User();
+            admin.setUsername("arthuradmin"); // Campo NOT NULL e UNIQUE na sua tabela
+            admin.setNome("Arthur Morelo");
+            admin.setEmail("arthurmorelo@gmail.com");
+            admin.setPassword(passwordEncoder.encode("admin123"));
+            admin.setRole(RoleEnum.ADMIN);
+            admin.setIsActive(true);
             
-            if (adminUser.getRole() != RoleEnum.ADMIN) {
-                adminUser.setRole(RoleEnum.ADMIN);
-                changed = true;
-            }
-            
-            // Força a atualização da senha se ela não estiver criptografada (BCrypt começa com $2a$)
-            if (adminUser.getPassword() == null || !adminUser.getPassword().startsWith("$2a$")) {
-                adminUser.setPassword(passwordEncoder.encode("admin123"));
-                changed = true;
-                System.out.println("Senha do ADMIN corrigida e criptografada com sucesso.");
-            }
-            
-            if (changed) {
-                userRepository.save(adminUser);
-                System.out.println("Role/Senha do usuário " + adminEmail + " atualizada.");
-            }
-        } else {
-            User newAdmin = User.builder()
-                    .username("arthuradmin")
-                    .nome("Arthur Morelo")
-                    .email(adminEmail)
-                    .password(passwordEncoder.encode("admin123")) // Senha padrão
-                    .role(RoleEnum.ADMIN)
-                    .isActive(true)
-                    .build();
-            userRepository.save(newAdmin);
-            System.out.println("Usuário ADMIN criado: " + adminEmail + " (senha: admin123)");
+            userRepository.save(admin);
+            System.out.println("====== USUÁRIO ADMIN CRIADO COM SUCESSO ======");
         }
     }
 }

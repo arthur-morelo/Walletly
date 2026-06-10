@@ -8,7 +8,7 @@ ALTER TABLE seguranca.usuario ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE
 
 -- Criar tabela de cursos
 CREATE TABLE seguranca.course (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     is_premium BOOLEAN NOT NULL DEFAULT FALSE,

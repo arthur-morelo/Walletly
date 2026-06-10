@@ -64,15 +64,20 @@ public class AuthController {
                     .header(HttpHeaders.SET_COOKIE, cookie.toString())
                     .body(responseBody);
         } catch (Exception e) {
+            System.err.println("=== ERRO DE LOGIN ===");
+            System.err.println("Classe da Exceção: " + e.getClass().getName());
+            System.err.println("Mensagem: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of("error", "Login failed: " + e.getMessage()));
         }
     }
     
     @PostMapping("/register")
     public ResponseEntity<String> register(@Valid @RequestBody SignupRequest signupRequest) {
+        System.out.println("\n\n>>> CHEGOU NO CONTROLLER DE REGISTRO! Email: " + signupRequest.email() + " <<<\n\n");
         try {
             String message = authService.register(signupRequest);
-            return ResponseEntity.ok(message);
+            return ResponseEntity.ok("Usuário cadastrado com sucesso");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

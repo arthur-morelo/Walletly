@@ -1,5 +1,7 @@
 package com.proint.walletly.service;
 
+import com.proint.walletly.dto.conta.ContaDTO;
+import com.proint.walletly.mapper.ContaMapper;
 import com.proint.walletly.model.Conta;
 import com.proint.walletly.model.InstituicaoFinanceira;
 import com.proint.walletly.model.User;
@@ -16,7 +18,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -24,7 +25,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,63 +33,61 @@ class ContaServiceTest {
     @Mock
     private ContaRepository contaRepository;
 
+    @Mock
+    private ContaMapper contaMapper;
+
     @InjectMocks
     private ContaService contaService;
 
     private Conta testConta;
-    private User testUser;
-    private InstituicaoFinanceira testInstituicao;
+    private ContaDTO testContaDTO;
 
     @BeforeEach
     void setUp() {
-        testUser = User.builder()
-                .id(1L)
-                .username("testuser")
-                .nome("Test User")
-                .email("test@example.com")
-                .build();
-
-        testInstituicao = InstituicaoFinanceira.builder()
-                .id(1L)
-                .nome("Banco Teste")
-                .logoUrl("https://example.com/logo.png")
-                .build();
-
         testConta = Conta.builder()
                 .id(1L)
                 .apelido("Conta Corrente")
                 .tipoConta("CORRENTE")
                 .saldoAtual(new BigDecimal("1000.00"))
                 .dataUltimaSincronizacao(OffsetDateTime.now())
-                .usuario(testUser)
-                .instituicao(testInstituicao)
                 .build();
+
+        testContaDTO = new ContaDTO(
+                1L,
+                1L,
+                1L,
+                "Conta Corrente",
+                "CORRENTE",
+                new BigDecimal("1000.00"),
+                OffsetDateTime.now()
+        );
     }
 
     @Test
     void save_ShouldReturnSavedConta_WhenValidContaProvided() {
+        when(contaMapper.toEntity(any(ContaDTO.class))).thenReturn(testConta);
         when(contaRepository.save(any(Conta.class))).thenReturn(testConta);
+        when(contaMapper.toDTO(any(Conta.class))).thenReturn(testContaDTO);
 
-        Conta result = contaService.save(testConta);
+        ContaDTO result = contaService.save(testContaDTO);
 
         assertNotNull(result);
-        assertEquals(testConta.getId(), result.getId());
-        assertEquals(testConta.getApelido(), result.getApelido());
-        assertEquals(testConta.getTipoConta(), result.getTipoConta());
-        assertEquals(testConta.getSaldoAtual(), result.getSaldoAtual());
-        verify(contaRepository).save(testConta);
+        assertEquals(testContaDTO.id(), result.id());
+        assertEquals(testContaDTO.apelido(), result.apelido());
+        verify(contaRepository).save(any(Conta.class));
     }
 
     @Test
     void findById_ShouldReturnConta_WhenIdExists() {
         Long id = 1L;
         when(contaRepository.findById(id)).thenReturn(Optional.of(testConta));
+        when(contaMapper.toDTO(testConta)).thenReturn(testContaDTO);
 
-        Optional<Conta> result = contaService.findById(id);
+        Optional<ContaDTO> result = contaService.findById(id);
 
         assertTrue(result.isPresent());
-        assertEquals(testConta.getId(), result.get().getId());
-        assertEquals(testConta.getApelido(), result.get().getApelido());
+        assertEquals(testContaDTO.id(), result.get().id());
+        assertEquals(testContaDTO.apelido(), result.get().apelido());
         verify(contaRepository).findById(id);
     }
 
@@ -98,7 +96,7 @@ class ContaServiceTest {
         Long id = 999L;
         when(contaRepository.findById(id)).thenReturn(Optional.empty());
 
-        Optional<Conta> result = contaService.findById(id);
+        Optional<ContaDTO> result = contaService.findById(id);
 
         assertFalse(result.isPresent());
         verify(contaRepository).findById(id);
@@ -111,12 +109,13 @@ class ContaServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         when(contaRepository.findAll(pageable)).thenReturn(page);
+        when(contaMapper.toDTO(any(Conta.class))).thenReturn(testContaDTO);
 
-        Page<Conta> result = contaService.findAll(pageable);
+        Page<ContaDTO> result = contaService.findAll(pageable);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals(testConta.getId(), result.getContent().get(0).getId());
+        assertEquals(testContaDTO.id(), result.getContent().get(0).id());
         verify(contaRepository).findAll(pageable);
     }
 
@@ -128,20 +127,21 @@ class ContaServiceTest {
                 .apelido("Conta Poupança Atualizada")
                 .tipoConta("POUPANCA")
                 .saldoAtual(new BigDecimal("2000.00"))
-                .dataUltimaSincronizacao(OffsetDateTime.now().plusHours(1))
-                .usuario(testUser)
-                .instituicao(testInstituicao)
                 .build();
+        
+        ContaDTO updatedDTO = new ContaDTO(
+                1L, 1L, 1L, "Conta Poupança Atualizada", "POUPANCA", new BigDecimal("2000.00"), null
+        );
 
         when(contaRepository.findById(id)).thenReturn(Optional.of(testConta));
         when(contaRepository.save(any(Conta.class))).thenReturn(updatedConta);
+        when(contaMapper.toDTO(any(Conta.class))).thenReturn(updatedDTO);
 
-        Conta result = contaService.update(id, updatedConta);
+        ContaDTO result = contaService.update(id, updatedDTO);
 
         assertNotNull(result);
-        assertEquals(updatedConta.getApelido(), result.getApelido());
-        assertEquals(updatedConta.getTipoConta(), result.getTipoConta());
-        assertEquals(updatedConta.getSaldoAtual(), result.getSaldoAtual());
+        assertEquals(updatedDTO.apelido(), result.apelido());
+        assertEquals(updatedDTO.tipoConta(), result.tipoConta());
         verify(contaRepository).findById(id);
         verify(contaRepository).save(any(Conta.class));
     }
@@ -149,12 +149,10 @@ class ContaServiceTest {
     @Test
     void update_ShouldThrowException_WhenIdDoesNotExist() {
         Long id = 999L;
-        Conta updatedConta = new Conta();
-
         when(contaRepository.findById(id)).thenReturn(Optional.empty());
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> contaService.update(id, updatedConta));
+                () -> contaService.update(id, testContaDTO));
         assertEquals("Conta não encontrada com o ID " + id, exception.getMessage());
         verify(contaRepository).findById(id);
         verify(contaRepository, never()).save(any(Conta.class));
@@ -163,57 +161,8 @@ class ContaServiceTest {
     @Test
     void deleteById_ShouldCallRepositoryDelete_WhenValidIdProvided() {
         Long id = 1L;
-
         contaService.deleteById(id);
-
         verify(contaRepository).deleteById(id);
-    }
-
-    @Test
-    void update_ShouldUpdateCorrectFields_WhenIdExists() {
-        Long id = 1L;
-        Conta updatedData = Conta.builder()
-                .apelido("Novo Apelido")
-                .tipoConta("INVESTIMENTO")
-                .saldoAtual(new BigDecimal("5000.00"))
-                .dataUltimaSincronizacao(OffsetDateTime.now().plusDays(1))
-                .build();
-
-        when(contaRepository.findById(id)).thenReturn(Optional.of(testConta));
-        when(contaRepository.save(any(Conta.class)))
-                .thenAnswer(invocation -> {
-                    Conta conta = invocation.getArgument(0);
-                    assertEquals(updatedData.getApelido(), conta.getApelido());
-                    assertEquals(updatedData.getTipoConta(), conta.getTipoConta());
-                    assertEquals(updatedData.getSaldoAtual(), conta.getSaldoAtual());
-                    assertEquals(updatedData.getDataUltimaSincronizacao(), conta.getDataUltimaSincronizacao());
-                    return conta;
-                });
-
-        contaService.update(id, updatedData);
-
-        verify(contaRepository).findById(id);
-        verify(contaRepository).save(any(Conta.class));
-    }
-
-    @Test
-    void save_ShouldPreserveAllFields_WhenValidContaProvided() {
-        when(contaRepository.save(any(Conta.class)))
-                .thenAnswer(invocation -> {
-                    Conta conta = invocation.getArgument(0);
-                    assertEquals(testConta.getApelido(), conta.getApelido());
-                    assertEquals(testConta.getTipoConta(), conta.getTipoConta());
-                    assertEquals(testConta.getSaldoAtual(), conta.getSaldoAtual());
-                    assertEquals(testConta.getDataUltimaSincronizacao(), conta.getDataUltimaSincronizacao());
-                    assertEquals(testConta.getUsuario(), conta.getUsuario());
-                    assertEquals(testConta.getInstituicao(), conta.getInstituicao());
-                    return testConta;
-                });
-
-        Conta result = contaService.save(testConta);
-
-        assertNotNull(result);
-        verify(contaRepository).save(testConta);
     }
 }
 

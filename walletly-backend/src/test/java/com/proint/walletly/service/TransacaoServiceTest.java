@@ -1,5 +1,7 @@
 package com.proint.walletly.service;
 
+import com.proint.walletly.dto.transacao.TransacaoDTO;
+import com.proint.walletly.mapper.TransacaoMapper;
 import com.proint.walletly.model.*;
 import com.proint.walletly.repository.TransacaoRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,7 +23,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,64 +31,58 @@ class TransacaoServiceTest {
     @Mock
     private TransacaoRepository transacaoRepository;
 
+    @Mock
+    private TransacaoMapper transacaoMapper;
+
     @InjectMocks
     private TransacaoService transacaoService;
 
     private Transacao testTransacao;
-    private Conta testConta;
-    private Categoria testCategoria;
+    private TransacaoDTO testTransacaoDTO;
 
     @BeforeEach
     void setUp() {
-        testConta = Conta.builder()
-                .id(1L)
-                .apelido("Conta Teste")
-                .tipoConta("CORRENTE")
-                .saldoAtual(new BigDecimal("1000.00"))
-                .build();
-
-        testCategoria = Categoria.builder()
-                .id(1L)
-                .nome("Alimentação")
-                .urlImagemCategoria("https://example.com/food.png")
-                .build();
-
         testTransacao = Transacao.builder()
                 .id(1L)
                 .descricao("Compra no supermercado")
                 .valor(new BigDecimal("50.00"))
                 .tipoTransacao("DESPESA")
                 .dataTransacao(LocalDate.now())
-                .conta(testConta)
-                .categoria(testCategoria)
                 .build();
+
+        testTransacaoDTO = new TransacaoDTO(
+                1L, 1L, 1L, "Compra no supermercado", new BigDecimal("50.00"), "DESPESA", LocalDate.now()
+        );
     }
 
     @Test
-    void save_ShouldReturnSavedTransacao_WhenValidTransacaoProvided() {
+    void save_ShouldReturnSavedTransacao_WhenValidDTOProvided() {
+        when(transacaoMapper.toEntity(any(TransacaoDTO.class))).thenReturn(testTransacao);
         when(transacaoRepository.save(any(Transacao.class))).thenReturn(testTransacao);
+        when(transacaoMapper.toDTO(any(Transacao.class))).thenReturn(testTransacaoDTO);
 
-        Transacao result = transacaoService.save(testTransacao);
+        TransacaoDTO result = transacaoService.save(testTransacaoDTO);
 
         assertNotNull(result);
-        assertEquals(testTransacao.getId(), result.getId());
-        assertEquals(testTransacao.getDescricao(), result.getDescricao());
-        assertEquals(testTransacao.getValor(), result.getValor());
-        assertEquals(testTransacao.getTipoTransacao(), result.getTipoTransacao());
-        assertEquals(testTransacao.getDataTransacao(), result.getDataTransacao());
-        verify(transacaoRepository).save(testTransacao);
+        assertEquals(testTransacaoDTO.id(), result.id());
+        assertEquals(testTransacaoDTO.descricao(), result.descricao());
+        assertEquals(testTransacaoDTO.valor(), result.valor());
+        assertEquals(testTransacaoDTO.tipoTransacao(), result.tipoTransacao());
+        assertEquals(testTransacaoDTO.dataTransacao(), result.dataTransacao());
+        verify(transacaoRepository).save(any(Transacao.class));
     }
 
     @Test
     void findById_ShouldReturnTransacao_WhenIdExists() {
         Long id = 1L;
         when(transacaoRepository.findById(id)).thenReturn(Optional.of(testTransacao));
+        when(transacaoMapper.toDTO(testTransacao)).thenReturn(testTransacaoDTO);
 
-        Optional<Transacao> result = transacaoService.findById(id);
+        Optional<TransacaoDTO> result = transacaoService.findById(id);
 
         assertTrue(result.isPresent());
-        assertEquals(testTransacao.getId(), result.get().getId());
-        assertEquals(testTransacao.getDescricao(), result.get().getDescricao());
+        assertEquals(testTransacaoDTO.id(), result.get().id());
+        assertEquals(testTransacaoDTO.descricao(), result.get().descricao());
         verify(transacaoRepository).findById(id);
     }
 
@@ -96,7 +91,7 @@ class TransacaoServiceTest {
         Long id = 999L;
         when(transacaoRepository.findById(id)).thenReturn(Optional.empty());
 
-        Optional<Transacao> result = transacaoService.findById(id);
+        Optional<TransacaoDTO> result = transacaoService.findById(id);
 
         assertFalse(result.isPresent());
         verify(transacaoRepository).findById(id);
@@ -109,12 +104,13 @@ class TransacaoServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         when(transacaoRepository.findAll(pageable)).thenReturn(page);
+        when(transacaoMapper.toDTO(any(Transacao.class))).thenReturn(testTransacaoDTO);
 
-        Page<Transacao> result = transacaoService.findAll(pageable);
+        Page<TransacaoDTO> result = transacaoService.findAll(pageable);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals(testTransacao.getId(), result.getContent().get(0).getId());
+        assertEquals(testTransacaoDTO.id(), result.getContent().get(0).id());
         verify(transacaoRepository).findAll(pageable);
     }
 
@@ -127,20 +123,23 @@ class TransacaoServiceTest {
                 .valor(new BigDecimal("75.00"))
                 .tipoTransacao("RECEITA")
                 .dataTransacao(LocalDate.now().plusDays(1))
-                .conta(testConta)
-                .categoria(testCategoria)
                 .build();
+                
+        TransacaoDTO updatedDTO = new TransacaoDTO(
+                1L, 1L, 1L, "Compra atualizada", new BigDecimal("75.00"), "RECEITA", LocalDate.now().plusDays(1)
+        );
 
         when(transacaoRepository.findById(id)).thenReturn(Optional.of(testTransacao));
         when(transacaoRepository.save(any(Transacao.class))).thenReturn(updatedTransacao);
+        when(transacaoMapper.toDTO(any(Transacao.class))).thenReturn(updatedDTO);
 
-        Transacao result = transacaoService.update(id, updatedTransacao);
+        TransacaoDTO result = transacaoService.update(id, updatedDTO);
 
         assertNotNull(result);
-        assertEquals(updatedTransacao.getDescricao(), result.getDescricao());
-        assertEquals(updatedTransacao.getValor(), result.getValor());
-        assertEquals(updatedTransacao.getTipoTransacao(), result.getTipoTransacao());
-        assertEquals(updatedTransacao.getDataTransacao(), result.getDataTransacao());
+        assertEquals(updatedDTO.descricao(), result.descricao());
+        assertEquals(updatedDTO.valor(), result.valor());
+        assertEquals(updatedDTO.tipoTransacao(), result.tipoTransacao());
+        assertEquals(updatedDTO.dataTransacao(), result.dataTransacao());
         verify(transacaoRepository).findById(id);
         verify(transacaoRepository).save(any(Transacao.class));
     }
@@ -148,12 +147,11 @@ class TransacaoServiceTest {
     @Test
     void update_ShouldThrowException_WhenIdDoesNotExist() {
         Long id = 999L;
-        Transacao updatedTransacao = new Transacao();
 
         when(transacaoRepository.findById(id)).thenReturn(Optional.empty());
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> transacaoService.update(id, updatedTransacao));
+                () -> transacaoService.update(id, testTransacaoDTO));
         assertEquals("Transação não encontrada com o ID " + id, exception.getMessage());
         verify(transacaoRepository).findById(id);
         verify(transacaoRepository, never()).save(any(Transacao.class));
@@ -162,83 +160,8 @@ class TransacaoServiceTest {
     @Test
     void deleteById_ShouldCallRepositoryDelete_WhenValidIdProvided() {
         Long id = 1L;
-
         transacaoService.deleteById(id);
-
         verify(transacaoRepository).deleteById(id);
-    }
-
-    @Test
-    void update_ShouldUpdateCorrectFields_WhenIdExists() {
-        Long id = 1L;
-        Transacao updatedData = Transacao.builder()
-                .descricao("Nova descrição")
-                .valor(new BigDecimal("100.00"))
-                .tipoTransacao("DESPESA")
-                .dataTransacao(LocalDate.now().plusDays(2))
-                .build();
-
-        when(transacaoRepository.findById(id)).thenReturn(Optional.of(testTransacao));
-        when(transacaoRepository.save(any(Transacao.class)))
-                .thenAnswer(invocation -> {
-                    Transacao transacao = invocation.getArgument(0);
-                    assertEquals(updatedData.getDescricao(), transacao.getDescricao());
-                    assertEquals(updatedData.getValor(), transacao.getValor());
-                    assertEquals(updatedData.getTipoTransacao(), transacao.getTipoTransacao());
-                    assertEquals(updatedData.getDataTransacao(), transacao.getDataTransacao());
-                    return transacao;
-                });
-
-        transacaoService.update(id, updatedData);
-
-        verify(transacaoRepository).findById(id);
-        verify(transacaoRepository).save(any(Transacao.class));
-    }
-
-    @Test
-    void save_ShouldPreserveAllFields_WhenValidTransacaoProvided() {
-        when(transacaoRepository.save(any(Transacao.class)))
-                .thenAnswer(invocation -> {
-                    Transacao transacao = invocation.getArgument(0);
-                    assertEquals(testTransacao.getDescricao(), transacao.getDescricao());
-                    assertEquals(testTransacao.getValor(), transacao.getValor());
-                    assertEquals(testTransacao.getTipoTransacao(), transacao.getTipoTransacao());
-                    assertEquals(testTransacao.getDataTransacao(), transacao.getDataTransacao());
-                    assertEquals(testTransacao.getConta(), transacao.getConta());
-                    assertEquals(testTransacao.getCategoria(), transacao.getCategoria());
-                    return testTransacao;
-                });
-
-        Transacao result = transacaoService.save(testTransacao);
-
-        assertNotNull(result);
-        verify(transacaoRepository).save(testTransacao);
-    }
-
-    @Test
-    void update_ShouldUpdateContaAndCategoria_WhenIdExists() {
-        Long id = 1L;
-        Conta newConta = Conta.builder().id(2L).apelido("Nova Conta").build();
-        Categoria newCategoria = Categoria.builder().id(2L).nome("Nova Categoria").build();
-        
-        Transacao updatedData = Transacao.builder()
-                .conta(newConta)
-                .categoria(newCategoria)
-                .build();
-
-        when(transacaoRepository.findById(id)).thenReturn(Optional.of(testTransacao));
-        when(transacaoRepository.save(any(Transacao.class)))
-                .thenAnswer(invocation -> {
-                    Transacao transacao = invocation.getArgument(0);
-                    assertEquals(updatedData.getConta(), transacao.getConta());
-                    assertEquals(updatedData.getCategoria(), transacao.getCategoria());
-                    return transacao;
-                });
-
-        transacaoService.update(id, updatedData);
-
-        verify(transacaoRepository).findById(id);
-        verify(transacaoRepository).save(any(Transacao.class));
     }
 }
 

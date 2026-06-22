@@ -1,12 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ArrowRight, 
-  TrendingUp, 
-  Target, 
-  BookOpen, 
-  CheckCircle2, 
-  ShieldCheck 
+import {
+    ArrowRight,
+    TrendingUp,
+    Target,
+    BookOpen,
+    CheckCircle2,
+    ShieldCheck
 } from 'lucide-react';
 import Header from '../components/Header'; // Importando o componente Header existente
 import logo from '../assets/logo.jpg';
@@ -14,10 +14,10 @@ import logo from '../assets/logo.jpg';
 function Start() {
     const navigate = useNavigate();
 
-    return ( 
+    return (
         <div className="flex flex-col min-h-screen bg-[#f8fafc]">
             {/* Header seguindo a estética do Header.jsx */}
-            <Header /> 
+            <Header />
 
             <main className="flex-grow">
                 {/* Hero Section */}
@@ -27,25 +27,25 @@ function Start() {
                             <ShieldCheck size={16} />
                             <span>Gestão Financeira Segura</span>
                         </div>
-                        
+
                         <h1 className="text-5xl md:text-6xl font-bold text-gray-900 leading-[1.1]">
                             Tome o controle do seu <span className="text-blue-600">futuro financeiro.</span>
                         </h1>
-                        
+
                         <p className="text-lg text-gray-600 leading-relaxed">
                             O Walletly ajuda você a monitorar gastos, definir metas de economia e aprender a investir melhor. Tudo em um só lugar.
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4">
-                            <button 
+                            <button
                                 onClick={() => navigate('/cadastro')}
                                 className="flex items-center justify-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
                             >
                                 Comece já
                                 <ArrowRight size={20} />
                             </button>
-                            <button 
-                                onClick={() => navigate('/')}
+                            <button
+                                onClick={() => navigate('/login')}
                                 className="flex items-center justify-center px-8 py-4 rounded-xl font-bold border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all"
                             >
                                 Já tenho conta
@@ -94,19 +94,19 @@ function Start() {
                         <div className="text-center mb-16">
                             <h2 className="text-3xl font-bold text-gray-900">Por que escolher o Walletly?</h2>
                         </div>
-                        
+
                         <div className="grid md:grid-cols-3 gap-12">
-                            <FeatureCard 
+                            <FeatureCard
                                 icon={<TrendingUp className="text-blue-600" />}
                                 title="Análise de Gastos"
                                 description="Visualize para onde vai cada centavo com gráficos intuitivos e categorias personalizadas."
                             />
-                            <FeatureCard 
+                            <FeatureCard
                                 icon={<Target className="text-green-600" />}
                                 title="Metas de Economia"
                                 description="Defina objetivos e acompanhe sua barra de progresso em tempo real."
                             />
-                            <FeatureCard 
+                            <FeatureCard
                                 icon={<BookOpen className="text-purple-600" />}
                                 title="Educação Financeira"
                                 description="Acesse cursos exclusivos para dominar o mercado financeiro e investimentos."
@@ -120,7 +120,7 @@ function Start() {
                 <p>© 2024 Walletly. Desenvolvido para sua liberdade financeira.</p>
             </footer>
         </div>
-     );
+    );
 }
 
 // Subcomponente para os cards de funcionalidade

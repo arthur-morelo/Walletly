@@ -12,7 +12,11 @@ const MonthlyResultsTable = ({ dados }) => {
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {dados.map((item, index) => (
+          {(!dados || dados.length === 0) ? (
+            <tr>
+              <td className="py-2 text-sm text-gray-500">Nenhum dado disponível.</td>
+            </tr>
+          ) : dados.map((item, index) => (
             <tr key={index}>
               <td className="py-2 text-sm text-gray-800">
                 {item.mes} - R$ {item.valor.toFixed(2)}

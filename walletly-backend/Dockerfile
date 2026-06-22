@@ -12,8 +12,8 @@ RUN ./mvnw dependency:go-offline
 
 COPY src/ src/
 
-RUN ./mvnw package -DskipTests
+RUN ./mvnw package -Dmaven.test.skip=true
 
-CMD ["./mvnw", "spring-boot:run"]
+CMD ["java", "-jar", "target/walletly-0.0.1-SNAPSHOT.jar"]
 
 EXPOSE 8080

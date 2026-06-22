@@ -53,4 +53,8 @@ public class Transacao {
     @Column(name = "data_transacao", nullable = false)
     @NotNull(message = "A data da transação é obrigatória")
     private LocalDate dataTransacao;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_extrato_history")
+    private ExtratoHistory extratoHistory;
 }

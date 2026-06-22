@@ -12,6 +12,12 @@ import {
 } from "recharts";
 
 const IncomeExpenseChart = ({ dados }) => {
+  const chartData = dados || [];
+
+  if (chartData.length === 0) {
+    return <div className="text-center p-4 text-gray-500">Nenhum dado disponível para o gráfico.</div>;
+  }
+
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={dados}>

@@ -10,5 +10,6 @@ import java.util.List;
 @Repository
 public interface ContaRepository extends JpaRepository<Conta, Long> {
     List<Conta> findByUsuario(User usuario);
+    java.util.Optional<Conta> findByApelidoAndUsuario(String apelido, User usuario);
 }
 

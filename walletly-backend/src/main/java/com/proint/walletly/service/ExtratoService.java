@@ -37,36 +37,33 @@ public class ExtratoService {
     private TransacaoRepository transacaoRepository;
 
     @Autowired
+    private TransacaoService transacaoService;
+
+    @Autowired
     private ContaRepository contaRepository;
+
+    @Autowired
+    private com.proint.walletly.repository.InstituicaoFinanceiraRepository instituicaoRepository;
+
+    @Autowired
+    private com.proint.walletly.repository.CategoriaRepository categoriaRepository;
+
+    @Autowired
+    private com.proint.walletly.repository.UserRepository userRepository;
 
     @Transactional
     public ExtratoHistory uploadExtrato(MultipartFile file, User user) {
+        User usuarioAtualizado = userRepository.findById(user.getId()).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
         ExtratoHistory history = ExtratoHistory.builder()
                 .filename(file.getOriginalFilename())
                 .status(ExtratoStatus.PENDENTE)
-                .user(user)
+                .user(usuarioAtualizado)
                 .build();
         
         history = extratoHistoryRepository.save(history);
 
         try {
-            List<Conta> contas = contaRepository.findByUsuario(user);
-            Conta contaPadrao;
-            
-            if (contas.isEmpty()) {
-                System.out.println("[OFX-INFO] Usuário sem contas. Criando 'Conta Padrão' automaticamente...");
-                contaPadrao = Conta.builder()
-                        .apelido("Conta Padrão")
-                        .instituicao(null) // Pode ser nulo se não for obrigatório
-                        .saldoAtual(BigDecimal.ZERO)
-                        .tipoConta("CORRENTE") // Campo obrigatório em Conta
-                        .usuario(user)
-                        .build();
-                contaPadrao = contaRepository.save(contaPadrao);
-            } else {
-                contaPadrao = contas.get(0);
-            }
-
             try (InputStream is = file.getInputStream()) {
                 AggregateUnmarshaller<ResponseEnvelope> unmarshaller = new AggregateUnmarshaller<>(ResponseEnvelope.class);
                 ResponseEnvelope envelope = unmarshaller.unmarshal(is);
@@ -78,6 +75,64 @@ public class ExtratoService {
                     throw new IllegalArgumentException("Arquivo OFX não contém dados bancários ou de cartão de crédito válidos.");
                 }
                 
+                String acctIdDoOfx = "Conta Padrão";
+                if (messageSet != null) {
+                    BankingResponseMessageSet bankMessageSet = (BankingResponseMessageSet) messageSet;
+                    List<BankStatementResponseTransaction> bankResponses = bankMessageSet.getStatementResponses();
+                    if (bankResponses != null && !bankResponses.isEmpty()) {
+                        BankStatementResponse statement = bankResponses.get(0).getMessage();
+                        if (statement != null && statement.getAccount() != null) {
+                            acctIdDoOfx = statement.getAccount().getAccountNumber();
+                        }
+                    }
+                } else if (creditCardMessageSet != null) {
+                    com.webcohesion.ofx4j.domain.data.creditcard.CreditCardResponseMessageSet ccMessageSet = 
+                        (com.webcohesion.ofx4j.domain.data.creditcard.CreditCardResponseMessageSet) creditCardMessageSet;
+                    List<com.webcohesion.ofx4j.domain.data.creditcard.CreditCardStatementResponseTransaction> ccResponses = ccMessageSet.getStatementResponses();
+                    if (ccResponses != null && !ccResponses.isEmpty()) {
+                        com.webcohesion.ofx4j.domain.data.creditcard.CreditCardStatementResponse statement = ccResponses.get(0).getMessage();
+                        if (statement != null && statement.getAccount() != null) {
+                            acctIdDoOfx = statement.getAccount().getAccountNumber();
+                        }
+                    }
+                }
+
+                if (acctIdDoOfx == null || acctIdDoOfx.isEmpty()) {
+                    acctIdDoOfx = "Conta Padrão";
+                }
+
+                String finalAcctId = acctIdDoOfx;
+                Conta contaOfx = contaRepository.findByApelidoAndUsuario(finalAcctId, usuarioAtualizado)
+                        .orElseGet(() -> {
+                            System.out.println("[OFX-INFO] Conta " + finalAcctId + " não encontrada para o usuário. Criando automaticamente...");
+                            com.proint.walletly.model.InstituicaoFinanceira inst = instituicaoRepository.findByNome("Importado via OFX")
+                                    .orElseGet(() -> {
+                                        com.proint.walletly.model.InstituicaoFinanceira novaInst = com.proint.walletly.model.InstituicaoFinanceira.builder()
+                                                .nome("Importado via OFX")
+                                                .logoUrl("https://via.placeholder.com/150")
+                                                .build();
+                                        return instituicaoRepository.save(novaInst);
+                                    });
+
+                            Conta novaConta = Conta.builder()
+                                    .apelido(finalAcctId)
+                                    .instituicao(inst)
+                                    .saldoAtual(BigDecimal.ZERO)
+                                    .tipoConta("CORRENTE")
+                                    .usuario(usuarioAtualizado)
+                                    .build();
+                            return contaRepository.save(novaConta);
+                        });
+                
+                com.proint.walletly.model.Categoria categoriaPadrao = categoriaRepository.findByNome("Não Categorizado")
+                        .orElseGet(() -> {
+                            com.proint.walletly.model.Categoria novaCat = com.proint.walletly.model.Categoria.builder()
+                                    .nome("Não Categorizado")
+                                    .urlImagemCategoria("https://via.placeholder.com/150")
+                                    .build();
+                            return categoriaRepository.save(novaCat);
+                        });
+
                 int transacoesSalvas = 0;
 
                 // Processa conta corrente
@@ -88,7 +143,7 @@ public class ExtratoService {
                         for (BankStatementResponseTransaction response : bankResponses) {
                             BankStatementResponse statement = response.getMessage();
                             if (statement != null && statement.getTransactionList() != null && statement.getTransactionList().getTransactions() != null) {
-                                transacoesSalvas += processTransactions(statement.getTransactionList().getTransactions(), contaPadrao);
+                                transacoesSalvas += processTransactions(statement.getTransactionList().getTransactions(), contaOfx, categoriaPadrao);
                             }
                         }
                     }
@@ -103,7 +158,7 @@ public class ExtratoService {
                         for (com.webcohesion.ofx4j.domain.data.creditcard.CreditCardStatementResponseTransaction response : ccResponses) {
                             com.webcohesion.ofx4j.domain.data.creditcard.CreditCardStatementResponse statement = response.getMessage();
                             if (statement != null && statement.getTransactionList() != null && statement.getTransactionList().getTransactions() != null) {
-                                transacoesSalvas += processTransactions(statement.getTransactionList().getTransactions(), contaPadrao);
+                                transacoesSalvas += processTransactions(statement.getTransactionList().getTransactions(), contaOfx, categoriaPadrao);
                             }
                         }
                     }
@@ -122,32 +177,38 @@ public class ExtratoService {
         return extratoHistoryRepository.save(history);
     }
 
-    private int processTransactions(List<Transaction> transactions, Conta contaPadrao) {
+    private int processTransactions(List<Transaction> transactions, Conta contaOfx, com.proint.walletly.model.Categoria categoriaPadrao) {
         int salvos = 0;
         for (Transaction ofxTx : transactions) {
-            String descricao = ofxTx.getMemo();
-            if (descricao == null || descricao.isEmpty()) {
-                descricao = ofxTx.getName() != null ? ofxTx.getName() : "Transação OFX";
-            }
-            if (descricao.length() > 255) {
-                descricao = descricao.substring(0, 255);
-            }
-            
-            String tipoTransacao = ofxTx.getTransactionType().name();
-            if (tipoTransacao.length() > 10) {
-                tipoTransacao = tipoTransacao.substring(0, 10);
-            }
+            try {
+                String descricao = ofxTx.getMemo();
+                if (descricao == null || descricao.isEmpty()) {
+                    descricao = ofxTx.getName() != null ? ofxTx.getName() : "Transação OFX";
+                }
+                if (descricao.length() > 255) {
+                    descricao = descricao.substring(0, 255);
+                }
+                
+                String tipoTransacao = ofxTx.getTransactionType().name();
+                if (tipoTransacao.length() > 10) {
+                    tipoTransacao = tipoTransacao.substring(0, 10);
+                }
 
-            Transacao tx = Transacao.builder()
-                .conta(contaPadrao)
-                .descricao(descricao)
-                .valor(BigDecimal.valueOf(Math.abs(ofxTx.getAmount())))
-                .tipoTransacao(tipoTransacao)
-                .dataTransacao(ofxTx.getDatePosted().toInstant().atZone(ZoneId.systemDefault()).toLocalDate())
-                .build();
-            
-            transacaoRepository.save(tx);
-            salvos++;
+                Transacao tx = Transacao.builder()
+                    .conta(contaOfx)
+                    .categoria(categoriaPadrao)
+                    .descricao(descricao)
+                    .valor(BigDecimal.valueOf(Math.abs(ofxTx.getAmount())))
+                    .tipoTransacao(tipoTransacao)
+                    .dataTransacao(ofxTx.getDatePosted().toInstant().atZone(ZoneId.systemDefault()).toLocalDate())
+                    .build();
+                
+                transacaoService.salvarTransacaoIsolada(tx);
+                salvos++;
+            } catch (Exception e) {
+                System.err.println("[OFX-INFO] Erro ao processar transação individual: " + e.getMessage());
+                e.printStackTrace();
+            }
         }
         return salvos;
     }

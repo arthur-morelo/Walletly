@@ -7,4 +7,5 @@ import com.proint.walletly.model.Categoria;
 
 @Repository
 public interface CategoriaRepository extends JpaRepository<Categoria, Long> {
+    java.util.Optional<Categoria> findByNome(String nome);
 }

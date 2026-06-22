@@ -7,4 +7,5 @@ import com.proint.walletly.model.InstituicaoFinanceira;
 
 @Repository
 public interface InstituicaoFinanceiraRepository extends JpaRepository<InstituicaoFinanceira, Long> {
+    java.util.Optional<InstituicaoFinanceira> findByNome(String nome);
 }

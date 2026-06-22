@@ -36,6 +36,11 @@ public class TransacaoService {
         return transacaoMapper.toDTO(saved);
     }
 
+    @org.springframework.transaction.annotation.Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public void salvarTransacaoIsolada(Transacao transacao) {
+        transacaoRepository.save(transacao);
+    }
+
     public Optional<TransacaoDTO> findById(Long id) {
         return transacaoRepository.findById(id)
                 .map(transacaoMapper::toDTO);

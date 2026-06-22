@@ -49,7 +49,7 @@ public class Conta {
 
     @Column(name = "saldo_atual", nullable = false, precision = 15, scale = 2)
     @NotNull(message = "O saldo atual é obrigatório")
-    @DecimalMin(value = "0.0", inclusive = false, message = "O saldo deve ser maior ou igual a 0")
+    @DecimalMin(value = "0.0", inclusive = true, message = "O saldo deve ser maior ou igual a 0")
     private BigDecimal saldoAtual;
 
     @Column(name = "data_ultima_sincronizacao")

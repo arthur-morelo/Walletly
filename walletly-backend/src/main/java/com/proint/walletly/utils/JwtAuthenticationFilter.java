@@ -85,8 +85,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (jwt != null) {
                 try {
                     username = jwtUtil.extractUsername(jwt);
+                } catch (io.jsonwebtoken.ExpiredJwtException e) {
+                    System.err.println("[JWT-ERROR] Token expirado: " + e.getMessage());
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.setCharacterEncoding("UTF-8");
+                    response.getWriter().write("{\"error\": \"Token expirado. Por favor, faça login novamente.\"}");
+                    return;
                 } catch (Exception e) {
-                    System.err.println("[JWT-ERROR] Erro ao extrair username do token (pode estar expirado): " + e.getMessage());
+                    System.err.println("[JWT-ERROR] Erro ao extrair username do token: " + e.getMessage());
                 }
             }
             

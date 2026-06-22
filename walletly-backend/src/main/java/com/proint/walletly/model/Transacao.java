@@ -27,6 +27,10 @@ public class Transacao {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fk_extrato_history")
+    private ExtratoHistory extratoHistory;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_conta", nullable = false)
     @NotNull(message = "A conta é obrigatória")
     private Conta conta;

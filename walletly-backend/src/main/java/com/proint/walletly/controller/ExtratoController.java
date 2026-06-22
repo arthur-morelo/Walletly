@@ -65,4 +65,22 @@ public class ExtratoController {
             return ResponseEntity.internalServerError().body("Erro ao carregar histórico: " + e.getMessage());
         }
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteExtrato(@PathVariable Long id, @AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
+        try {
+            if (userDetails == null) {
+                return ResponseEntity.status(401).body("Usuário não autenticado.");
+            }
+            User user = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado: " + userDetails.getUsername()));
+                
+            extratoService.deleteExtrato(id, user);
+            return ResponseEntity.ok().body("Arquivo deletado com sucesso.");
+        } catch (Exception e) {
+            System.err.println("ERRO AO DELETAR EXTRATO:");
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("Erro ao deletar extrato: " + e.getMessage());
+        }
+    }
 }

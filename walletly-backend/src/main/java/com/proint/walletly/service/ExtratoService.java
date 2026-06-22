@@ -143,7 +143,7 @@ public class ExtratoService {
                         for (BankStatementResponseTransaction response : bankResponses) {
                             BankStatementResponse statement = response.getMessage();
                             if (statement != null && statement.getTransactionList() != null && statement.getTransactionList().getTransactions() != null) {
-                                transacoesSalvas += processTransactions(statement.getTransactionList().getTransactions(), contaOfx, categoriaPadrao);
+                                transacoesSalvas += processTransactions(statement.getTransactionList().getTransactions(), contaOfx, categoriaPadrao, history);
                             }
                         }
                     }
@@ -158,7 +158,7 @@ public class ExtratoService {
                         for (com.webcohesion.ofx4j.domain.data.creditcard.CreditCardStatementResponseTransaction response : ccResponses) {
                             com.webcohesion.ofx4j.domain.data.creditcard.CreditCardStatementResponse statement = response.getMessage();
                             if (statement != null && statement.getTransactionList() != null && statement.getTransactionList().getTransactions() != null) {
-                                transacoesSalvas += processTransactions(statement.getTransactionList().getTransactions(), contaOfx, categoriaPadrao);
+                                transacoesSalvas += processTransactions(statement.getTransactionList().getTransactions(), contaOfx, categoriaPadrao, history);
                             }
                         }
                     }
@@ -177,7 +177,7 @@ public class ExtratoService {
         return extratoHistoryRepository.save(history);
     }
 
-    private int processTransactions(List<Transaction> transactions, Conta contaOfx, com.proint.walletly.model.Categoria categoriaPadrao) {
+    private int processTransactions(List<Transaction> transactions, Conta contaOfx, com.proint.walletly.model.Categoria categoriaPadrao, ExtratoHistory extratoHistory) {
         int salvos = 0;
         for (Transaction ofxTx : transactions) {
             try {
@@ -201,6 +201,7 @@ public class ExtratoService {
                     .valor(BigDecimal.valueOf(Math.abs(ofxTx.getAmount())))
                     .tipoTransacao(tipoTransacao)
                     .dataTransacao(ofxTx.getDatePosted().toInstant().atZone(ZoneId.systemDefault()).toLocalDate())
+                    .extratoHistory(extratoHistory)
                     .build();
                 
                 transacaoService.salvarTransacaoIsolada(tx);
@@ -216,5 +217,17 @@ public class ExtratoService {
     @Transactional(readOnly = true)
     public List<ExtratoHistory> getHistory(User user) {
         return extratoHistoryRepository.findByUserOrderByUploadDateDesc(user);
+    }
+
+    @Transactional
+    public void deleteExtrato(Long id, User user) {
+        ExtratoHistory history = extratoHistoryRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Extrato não encontrado"));
+            
+        if (!history.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("Acesso negado");
+        }
+        
+        extratoHistoryRepository.delete(history);
     }
 }

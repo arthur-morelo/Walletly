@@ -58,6 +58,7 @@ public class TransacaoController {
             Pageable pageable
     ) {
         TransacaoFilterDTO filter = new TransacaoFilterDTO(
+                null,
                 contaId,
                 categoriaId,
                 tipoTransacao,
@@ -79,6 +80,7 @@ public class TransacaoController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim
     ) {
         TransacaoFilterDTO filter = new TransacaoFilterDTO(
+                null,
                 contaId,
                 categoriaId,
                 tipoTransacao,
@@ -100,6 +102,7 @@ public class TransacaoController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim
     ) {
         TransacaoFilterDTO filter = new TransacaoFilterDTO(
+                null,
                 contaId,
                 categoriaId,
                 tipoTransacao,
@@ -121,6 +124,7 @@ public class TransacaoController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim
     ) {
         TransacaoFilterDTO filter = new TransacaoFilterDTO(
+                null,
                 contaId,
                 categoriaId,
                 tipoTransacao,
@@ -142,6 +146,7 @@ public class TransacaoController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim
     ) {
         TransacaoFilterDTO filter = new TransacaoFilterDTO(
+                null,
                 contaId,
                 categoriaId,
                 tipoTransacao,

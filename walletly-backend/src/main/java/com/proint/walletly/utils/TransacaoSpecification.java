@@ -11,6 +11,7 @@ import java.util.List;
 public class TransacaoSpecification {
 
     public static Specification<Transacao> withFilters(
+            Long usuarioId,
             Long contaId,
             Long categoriaId,
             String tipoTransacao,
@@ -20,6 +21,10 @@ public class TransacaoSpecification {
     ) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
+
+            if (usuarioId != null) {
+                predicates.add(criteriaBuilder.equal(root.join("conta").join("usuario").get("id"), usuarioId));
+            }
 
             if (contaId != null) {
                 predicates.add(criteriaBuilder.equal(root.get("conta").get("id"), contaId));

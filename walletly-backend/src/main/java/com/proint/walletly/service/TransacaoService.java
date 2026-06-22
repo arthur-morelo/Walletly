@@ -53,6 +53,7 @@ public class TransacaoService {
 
     public Page<TransacaoDTO> findWithFilters(TransacaoFilterDTO filter, Pageable pageable) {
         Specification<Transacao> spec = TransacaoSpecification.withFilters(
+                filter.usuarioId(),
                 filter.contaId(),
                 filter.categoriaId(),
                 filter.tipoTransacao(),
@@ -66,6 +67,7 @@ public class TransacaoService {
 
     public List<Transacao> findWithFilters(TransacaoFilterDTO filter) {
         Specification<Transacao> spec = TransacaoSpecification.withFilters(
+                filter.usuarioId(),
                 filter.contaId(),
                 filter.categoriaId(),
                 filter.tipoTransacao(),

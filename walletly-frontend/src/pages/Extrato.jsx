@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Header from "../components/Header";
 import api from "../services/api";
-import { UploadCloud, FileText, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
+import { UploadCloud, FileText, CheckCircle, XCircle, Clock, AlertCircle, Trash2 } from "lucide-react";
 
 /**
  * @typedef {Object} ExtratoHistory
@@ -30,6 +30,19 @@ function ExtratosPage() {
       setHistory(response.data);
     } catch (error) {
       console.error("Erro ao carregar histórico", error);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Tem certeza que deseja deletar este extrato? As transações importadas também serão removidas do seu saldo.")) {
+      return;
+    }
+    try {
+      await api.delete(`/extratos/${id}`);
+      loadHistory();
+    } catch (error) {
+      console.error("Erro ao deletar extrato", error);
+      alert("Erro ao deletar extrato. Tente novamente.");
     }
   };
 
@@ -118,7 +131,7 @@ function ExtratosPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <main className="max-w-5xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Extratos Bancários</h1>
           <p className="mt-2 text-gray-600">
@@ -185,6 +198,7 @@ function ExtratosPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data de Envio</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mensagem</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -205,8 +219,17 @@ function ExtratosPage() {
                           {getStatusBadge(item.status)}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={item.logMessage}>
+                      <td className="px-6 py-4 text-sm text-gray-500 max-w-2xl truncate" title={item.logMessage}>
                         {item.logMessage || "-"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="text-red-500 hover:text-red-700 transition-colors p-1 rounded-md hover:bg-red-50"
+                          title="Deletar Arquivo e Transações"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
                       </td>
                     </tr>
                   ))}

@@ -1,12 +1,38 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import Header from "../../components/Header";
-import { cursos } from "../../data/data";
 import CursoNotFound from "./CursoNotFound";
+import api from "../../services/api";
 
 export default function Curso() {
   const { id } = useParams();
-  const curso = cursos.find((c) => c.id === parseInt(id));
+  const [curso, setCurso] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCurso = async () => {
+      try {
+        const response = await api.get(`/cursos/${id}`);
+        setCurso(response.data);
+      } catch (error) {
+        console.error("Erro ao buscar curso:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCurso();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <div className="container mx-auto px-4 py-12 text-center text-gray-500">
+          Carregando curso...
+        </div>
+      </>
+    );
+  }
 
   if (!curso) {
     return (
@@ -17,7 +43,7 @@ export default function Curso() {
     );
   }
 
-  const { Title, textLeft, textRight } = curso;
+  const { title, textLeft, textRight } = curso;
 
   return (
     <>
@@ -26,7 +52,7 @@ export default function Curso() {
         {/* Cabeçalho com linha decorativa */}
         <div className="flex items-center justify-center flex-col mb-16">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 text-center">
-            {Title}
+            {title}
           </h1>
           <div className="w-24 h-1 bg-blue-600 rounded-full"></div>
         </div>

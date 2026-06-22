@@ -70,4 +70,14 @@ public class AuthService {
         userRepository.save(user);
         return "User registered successfully!";
     }
+
+    public User getAuthenticatedUser() {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof org.springframework.security.core.userdetails.UserDetails) {
+            String username = ((org.springframework.security.core.userdetails.UserDetails) auth.getPrincipal()).getUsername();
+            return userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+        }
+        throw new RuntimeException("No authenticated user");
+    }
 }

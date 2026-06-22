@@ -85,7 +85,7 @@ function MenuComponent() {
           {/* Footer do Menu */}
           <div className="p-4 border-t border-blue-800">
             <div className="text-center text-blue-300 text-sm">
-              <p>Walletly © 2024</p>
+              <p>Walletly © 2025</p>
               <p className="text-xs mt-1">Seu assistente financeiro</p>
             </div>
           </div>

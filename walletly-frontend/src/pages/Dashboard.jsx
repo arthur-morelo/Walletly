@@ -1,72 +1,126 @@
-import React, { useState } from "react";
-import DailyBalanceChart from "../components/DailyBalanceChart";
-import DailyBalanceTable from "../components/DailyBalanceTable";
-import IncomeExpenseChart from "../components/IncomeExpenseChart";
+import React, { useState, useEffect } from "react";
+import IncomeChart from "../components/IncomeChart";
+import ExpenseChart from "../components/ExpenseChart";
 import MonthlyResultsTable from "../components/MonthlyResultsTable";
 import Header from "../components/Header";
+import api from "../services/api";
+
 const Dashboard = () => {
   const [mesSelecionado, setMesSelecionado] = useState("AGO");
-  const [dadosDiariosSaldos, setDadosDiariosSaldos] = useState([]);
-  const [dadosDiariosTabela, setDadosDiariosTabela] = useState([]);
-  const [dadosExtratoMensal, setDadosExtratoMensal] = useState([]);
-  const [dadosResultadoMensal, setDadosResultadoMensal] = useState([]);
+  const [dadosGraficoMensal, setDadosGraficoMensal] = useState([]);
+  const [saldoAtual, setSaldoAtual] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState(null);
 
-  const dadosFiltradosMensal = dadosExtratoMensal && dadosExtratoMensal.length > 0
-    ? dadosExtratoMensal.filter((item) => item.name === mesSelecionado)
-    : [];
+  useEffect(() => {
+    async function carregarDados() {
+      try {
+        // Busca dados agrupados por mês para os gráficos
+        const responseGeral = await api.get("/dashboard/resumo-mensal");
+        console.log("Resumo Mensal:", responseGeral.data);
+        setDadosGraficoMensal(responseGeral.data);
+        setErrorMsg(null);
+
+        // Exemplo: Somar saldos de todas as contas para o Saldo Atual
+        const responseContas = await api.get("/contas");
+        const contas = Array.isArray(responseContas.data) ? responseContas.data : responseContas.data.content || [];
+        const total = contas.reduce((acc, conta) => acc + conta.saldoAtual, 0);
+        setSaldoAtual(total);
+
+        setLoading(false);
+      } catch (error) {
+        console.error("Erro ao carregar dados do dashboard:", error);
+        setErrorMsg(error.response ? "Erro API: " + error.response.status + " " + JSON.stringify(error.response.data) : "Erro de conexão: " + error.message);
+        setLoading(false);
+      }
+    }
+    carregarDados();
+  }, []);
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen">Carregando dados...</div>;
+  }
 
   return (
-    // 1. Div principal para ocupar a tela inteira e dar uma cor de fundo
-    <div className="min-h-screen bg-gray-100 dark:bg-slate-950 transition-colors duration-300">
-      {/* O Header agora está aqui fora, ocupando a largura total */}
+    <div className="min-h-screen bg-gray-100">
       <Header />
 
-      {/* 2. Um novo container APENAS para o conteúdo do dashboard */}
       <main className="container mx-auto p-8">
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-lg shadow-md mb-8 transition-colors duration-300">
-          <h2 className="text-xl font-bold mb-2 text-gray-800 dark:text-slate-100">
-            Saldo Atual: R$ 0,00
+        <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-2">
+            Saldo Atual: R$ {saldoAtual.toFixed(2)}
           </h2>
-          <div className="flex flex-col">
-            <div className="w-full h-80 mb-8">
-              <h3 className="text-lg font-semibold mb-4 text-gray-700 dark:text-slate-200">
-                Saldo de {mesSelecionado}
-              </h3>
-              <DailyBalanceChart dados={dadosDiariosSaldos} />
+          {errorMsg && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+              <strong className="font-bold">Ops! </strong>
+              <span className="block sm:inline">{errorMsg}</span>
             </div>
-            <div className="w-full mt-6">
-              <h3 className="text-lg font-semibold mb-4 text-gray-700 dark:text-slate-200">
-                Saldos em {mesSelecionado}
+          )}
+          {(!dadosGraficoMensal || dadosGraficoMensal.length === 0) && !errorMsg && !loading && (
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded relative mb-4">
+              Nenhuma transação encontrada. Você já fez o upload de um arquivo OFX no menu "Extratos"?
+            </div>
+          )}
+          <div className="flex flex-col md:flex-row md:items-center">
+            <div className="w-full md:w-2/3 h-80">
+              <h3 className="text-lg font-semibold mb-4 text-gray-700">
+                Ganhos por Mês (Receitas)
               </h3>
-              <DailyBalanceTable dados={dadosDiariosTabela} />
+              <IncomeChart dados={dadosGraficoMensal} />
+            </div>
+            <div className="w-full md:w-1/3 mt-6 md:mt-0 md:ml-6">
+              <br />
+              <h3 className="text-lg font-semibold mb-4 text-gray-700">
+                Tabela de Ganhos
+              </h3>
+              <div className="w-full bg-gray-100 rounded-lg overflow-hidden max-h-80 overflow-y-auto">
+                <table className="min-w-full text-center divide-y divide-gray-300">
+                  <thead className="bg-gray-200">
+                    <tr><th className="py-2 px-4 text-sm font-semibold text-gray-600">Ganhos do Mês</th></tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {dadosGraficoMensal.map((item, index) => (
+                      <tr key={index}>
+                        <td className="py-2 text-sm text-gray-800">
+                          {item.mes} - R$ {item.ganhos.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-lg shadow-md mb-8 transition-colors duration-300">
-          <div className="flex flex-col">
-            <div className="w-full h-80 mb-8">
-              <h3 className="text-lg font-semibold mb-4 text-gray-700 dark:text-slate-200">
-                Receitas e Despesas
-                <select
-                  className="ml-4 p-1 rounded-md border border-gray-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  value={mesSelecionado}
-                  onChange={(e) => setMesSelecionado(e.target.value)}
-                >
-                  {dadosExtratoMensal.map((item) => (
-                    <option key={item.name} value={item.name}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="flex flex-col md:flex-row md:items-center">
+            <div className="w-full md:w-2/3 h-80">
+              <h3 className="text-lg font-semibold mb-4 text-gray-700">
+                Despesas por Mês (Gastos)
               </h3>
-              <IncomeExpenseChart dados={dadosFiltradosMensal} />
+              <ExpenseChart dados={dadosGraficoMensal} />
             </div>
-            <div className="w-full mt-6">
-              <h3 className="text-lg font-semibold mb-4 text-gray-700 dark:text-slate-200">
-                Demonstração de Resultado
+            <div className="w-full md:w-1/3 mt-6 md:mt-0 md:ml-6">
+              <h3 className="text-lg font-semibold mb-4 text-gray-700">
+                Tabela de Gastos
               </h3>
-              <MonthlyResultsTable dados={dadosResultadoMensal} />
+              <div className="w-full bg-gray-100 rounded-lg overflow-hidden max-h-80 overflow-y-auto">
+                <table className="min-w-full text-center divide-y divide-gray-300">
+                  <thead className="bg-gray-200">
+                    <tr><th className="py-2 px-4 text-sm font-semibold text-gray-600">Gastos do Mês</th></tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {dadosGraficoMensal.map((item, index) => (
+                      <tr key={index}>
+                        <td className="py-2 text-sm text-gray-800">
+                          {item.mes} - R$ {item.gastos.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>

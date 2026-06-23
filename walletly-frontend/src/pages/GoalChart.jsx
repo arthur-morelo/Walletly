@@ -18,7 +18,7 @@ const GoalTracker = () => {
   const [newGoal, setNewGoal] = useState({ name: "", goal: 0, saved: 0 });
 
   const [selectedGoalId, setSelectedGoalId] = useState(null);
-  const [amountToAdd, setAmountToAdd] = useState(0);
+  const [amountToAdd, setAmountToAdd] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,8 +27,29 @@ const GoalTracker = () => {
 
   const carregarMetas = async () => {
     try {
-      const response = await api.get("/goals"); // ou o endpoint de metas correspondente
-      setGoals(response.data.content || response.data || []);
+      const response = await api.get("/metas");
+      const loadedGoals = response.data.content || response.data || [];
+      
+      // Verifica se alguma meta foi atingida
+      const metasAtingidas = loadedGoals.filter(goal => parseFloat(goal.valorAtual) >= parseFloat(goal.valorMeta));
+      
+      for (const meta of metasAtingidas) {
+        alert("Parabéns! Você atingiu a sua meta financeira com sucesso!");
+        try {
+          await api.delete(`/metas/${meta.id}`);
+        } catch (error) {
+          console.error("Erro ao deletar meta concluída", error);
+        }
+      }
+      
+      if (metasAtingidas.length > 0) {
+        // Recarrega se deletou algo
+        const updatedResponse = await api.get("/metas");
+        const list = updatedResponse.data.content || updatedResponse.data || [];
+        setGoals(list.map(g => ({ ...g, valorRestante: Math.max(0, parseFloat(g.valorMeta) - parseFloat(g.valorAtual)) })));
+      } else {
+        setGoals(loadedGoals.map(g => ({ ...g, valorRestante: Math.max(0, parseFloat(g.valorMeta) - parseFloat(g.valorAtual)) })));
+      }
     } catch (error) {
       console.error("Erro ao carregar metas", error);
       // Fallback pra não quebrar a tela se a api não existir
@@ -43,11 +64,17 @@ const GoalTracker = () => {
     if (!newGoal.name || parseFloat(newGoal.goal) <= 0) return;
 
     try {
-      await api.post("/goals", {
-        name: newGoal.name,
-        goal: parseFloat(newGoal.goal),
-        saved: parseFloat(newGoal.saved) || 0
-      });
+      const storedUser = localStorage.getItem('@Walletly:user');
+      const usuarioId = storedUser ? JSON.parse(storedUser).id : null;
+
+      const payload = {
+        usuarioId: Number(usuarioId),
+        nome: newGoal.name,
+        valorMeta: Number(newGoal.goal),
+        valorAtual: Number(newGoal.saved) || 0
+      };
+
+      await api.post("/metas", payload);
       setNewGoal({ name: "", goal: 0, saved: 0 });
       carregarMetas();
     } catch (error) {
@@ -60,8 +87,26 @@ const GoalTracker = () => {
     if (amountToAdd <= 0 || !selectedGoalId) return;
 
     try {
-      await api.put(`/goals/${selectedGoalId}/add`, { amount: parseFloat(amountToAdd) });
-      setAmountToAdd(0);
+      const metaToUpdate = goals.find(g => g.id === parseInt(selectedGoalId) || g.id === selectedGoalId);
+      if (!metaToUpdate) return;
+      const newValorAtual = parseFloat(metaToUpdate.valorAtual) + parseFloat(amountToAdd);
+      
+      await api.put(`/metas/${selectedGoalId}`, { 
+        ...metaToUpdate, 
+        valorAtual: newValorAtual 
+      });
+      setAmountToAdd("");
+      
+      // Encontra a meta atualizada e verifica se vai atingir
+      if (newValorAtual >= parseFloat(metaToUpdate.valorMeta)) {
+        alert("Parabéns! Você atingiu a sua meta financeira com sucesso!");
+        try {
+          await api.delete(`/metas/${selectedGoalId}`);
+        } catch (error) {
+          console.error("Erro ao deletar meta concluída", error);
+        }
+      }
+      
       carregarMetas();
     } catch (error) {
       console.error("Erro ao atualizar meta", error);
@@ -70,7 +115,7 @@ const GoalTracker = () => {
 
   const handleRemoveGoal = async (goalIdToRemove) => {
     try {
-      await api.delete(`/goals/${goalIdToRemove}`);
+      await api.delete(`/metas/${goalIdToRemove}`);
       carregarMetas();
     } catch (error) {
       console.error("Erro ao remover meta", error);
@@ -133,9 +178,10 @@ const GoalTracker = () => {
             onChange={(e) => setSelectedGoalId(e.target.value)}
             className="flex-1 p-2 border border-gray-300 rounded-md"
           >
+            <option value="" disabled>Selecione uma meta</option>
             {goals.map((goal) => (
               <option key={goal.id} value={goal.id}>
-                {goal.name}
+                {goal.nome}
               </option>
             ))}
           </select>
@@ -166,16 +212,17 @@ const GoalTracker = () => {
             >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis type="number" />
-              <YAxis type="category" dataKey="name" />
+              <YAxis type="category" dataKey="nome" />
 
               <Tooltip content={<CustomTooltip />} />
 
-              <Bar dataKey="saved" fill="#3B82F6" />
+              <Bar dataKey="valorAtual" stackId="a" fill="#3B82F6" />
+              <Bar dataKey="valorRestante" stackId="a" fill="#E5E7EB" />
 
               {goals.map((goal) => (
                 <ReferenceLine
                   key={goal.id}
-                  x={goal.goal}
+                  x={goal.valorMeta}
                   stroke="#EF4444"
                   strokeDasharray="3 3"
                 />
@@ -187,25 +234,29 @@ const GoalTracker = () => {
 
       <div className="bg-white p-6 rounded-lg shadow-md mt-8">
         <h2 className="text-xl font-bold mb-4">Gerenciar Metas</h2>
-        <ul className="space-y-4">
-          {goals.map((goal) => (
-            <li
-              key={goal.id}
-              className="flex items-center justify-between p-4 border border-gray-200 rounded-md"
-            >
-              <span>
-                {goal.name}: R$ {goal.saved.toFixed(2)} / R${" "}
-                {goal.goal.toFixed(2)}
-              </span>
-              <button
-                onClick={() => handleRemoveGoal(goal.id)}
-                className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition-colors duration-200"
+        {goals.length === 0 ? (
+          <p className="text-gray-500">Nenhuma meta cadastrada.</p>
+        ) : (
+          <ul className="space-y-4">
+            {goals.map((goal) => (
+              <li
+                key={goal.id}
+                className="flex items-center justify-between p-4 border border-gray-200 rounded-md"
               >
-                Remover
-              </button>
-            </li>
-          ))}
-        </ul>
+                <span>
+                  {goal.nome}: R$ {goal.valorAtual?.toFixed(2) || '0.00'} / R${" "}
+                  {goal.valorMeta?.toFixed(2) || '0.00'}
+                </span>
+                <button
+                  onClick={() => handleRemoveGoal(goal.id)}
+                  className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition-colors duration-200"
+                >
+                  Remover
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );

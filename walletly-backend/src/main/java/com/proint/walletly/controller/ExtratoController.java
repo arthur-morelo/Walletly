@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/extratos")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
+
 public class ExtratoController {
 
     @Autowired

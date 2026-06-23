@@ -64,11 +64,7 @@ const GoalTracker = () => {
     if (!newGoal.name || parseFloat(newGoal.goal) <= 0) return;
 
     try {
-      const storedUser = localStorage.getItem('@Walletly:user');
-      const usuarioId = storedUser ? JSON.parse(storedUser).id : null;
-
       const payload = {
-        usuarioId: Number(usuarioId),
         nome: newGoal.name,
         valorMeta: Number(newGoal.goal),
         valorAtual: Number(newGoal.saved) || 0

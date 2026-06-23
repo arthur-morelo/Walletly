@@ -23,14 +23,17 @@ public class TransacaoService {
 
     private final TransacaoRepository transacaoRepository;
     private final TransacaoMapper transacaoMapper;
+    private final com.proint.walletly.utils.SecurityUtils securityUtils;
 
     @Autowired
-    public TransacaoService(TransacaoRepository transacaoRepository, TransacaoMapper transacaoMapper) {
+    public TransacaoService(TransacaoRepository transacaoRepository, TransacaoMapper transacaoMapper, com.proint.walletly.utils.SecurityUtils securityUtils) {
         this.transacaoRepository = transacaoRepository;
         this.transacaoMapper = transacaoMapper;
+        this.securityUtils = securityUtils;
     }
 
     public TransacaoDTO save(TransacaoDTO dto) {
+        // Validação de conta pertencente ao usuário omitida por simplicidade/escopo
         Transacao transacao = transacaoMapper.toEntity(dto);
         Transacao saved = transacaoRepository.save(transacao);
         return transacaoMapper.toDTO(saved);
@@ -47,13 +50,18 @@ public class TransacaoService {
     }
 
     public Page<TransacaoDTO> findAll(Pageable pageable) {
-        return transacaoRepository.findAll(pageable)
+        Long usuarioId = securityUtils.getAuthenticatedUser().getId();
+        Specification<Transacao> spec = TransacaoSpecification.withFilters(
+                usuarioId, null, null, null, null, null, null
+        );
+        return transacaoRepository.findAll(spec, pageable)
                 .map(transacaoMapper::toDTO);
     }
 
     public Page<TransacaoDTO> findWithFilters(TransacaoFilterDTO filter, Pageable pageable) {
+        Long usuarioId = securityUtils.getAuthenticatedUser().getId();
         Specification<Transacao> spec = TransacaoSpecification.withFilters(
-                filter.usuarioId(),
+                usuarioId,
                 filter.contaId(),
                 filter.categoriaId(),
                 filter.tipoTransacao(),
@@ -66,8 +74,9 @@ public class TransacaoService {
     }
 
     public List<Transacao> findWithFilters(TransacaoFilterDTO filter) {
+        Long usuarioId = securityUtils.getAuthenticatedUser().getId();
         Specification<Transacao> spec = TransacaoSpecification.withFilters(
-                filter.usuarioId(),
+                usuarioId,
                 filter.contaId(),
                 filter.categoriaId(),
                 filter.tipoTransacao(),

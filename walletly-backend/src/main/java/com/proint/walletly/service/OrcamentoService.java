@@ -16,15 +16,19 @@ public class OrcamentoService {
 
     private final OrcamentoRepository orcamentoRepository;
     private final OrcamentoMapper orcamentoMapper;
+    private final com.proint.walletly.utils.SecurityUtils securityUtils;
 
     @Autowired
-    public OrcamentoService(OrcamentoRepository orcamentoRepository, OrcamentoMapper orcamentoMapper) {
+    public OrcamentoService(OrcamentoRepository orcamentoRepository, OrcamentoMapper orcamentoMapper, com.proint.walletly.utils.SecurityUtils securityUtils) {
         this.orcamentoRepository = orcamentoRepository;
         this.orcamentoMapper = orcamentoMapper;
+        this.securityUtils = securityUtils;
     }
 
     public OrcamentoDTO save(OrcamentoDTO dto) {
+        com.proint.walletly.model.User usuarioLogado = securityUtils.getAuthenticatedUser();
         Orcamento orcamento = orcamentoMapper.toEntity(dto);
+        orcamento.setUser(usuarioLogado); // Força o usuário logado
         Orcamento saved = orcamentoRepository.save(orcamento);
         return orcamentoMapper.toDTO(saved);
     }
@@ -35,7 +39,8 @@ public class OrcamentoService {
     }
 
     public Page<OrcamentoDTO> findAll(Pageable pageable) {
-        return orcamentoRepository.findAll(pageable)
+        com.proint.walletly.model.User usuarioLogado = securityUtils.getAuthenticatedUser();
+        return orcamentoRepository.findByUser(usuarioLogado, pageable)
                 .map(orcamentoMapper::toDTO);
     }
 

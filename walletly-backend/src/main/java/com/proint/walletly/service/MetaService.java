@@ -16,15 +16,19 @@ public class MetaService {
 
     private final MetaRepository metaRepository;
     private final MetaMapper metaMapper;
+    private final com.proint.walletly.utils.SecurityUtils securityUtils;
 
     @Autowired
-    public MetaService(MetaRepository metaRepository, MetaMapper metaMapper) {
+    public MetaService(MetaRepository metaRepository, MetaMapper metaMapper, com.proint.walletly.utils.SecurityUtils securityUtils) {
         this.metaRepository = metaRepository;
         this.metaMapper = metaMapper;
+        this.securityUtils = securityUtils;
     }
 
     public MetaDTO save(MetaDTO dto) {
+        com.proint.walletly.model.User usuarioLogado = securityUtils.getAuthenticatedUser();
         Meta meta = metaMapper.toEntity(dto);
+        meta.setUser(usuarioLogado); // Força o usuário logado
         Meta saved = metaRepository.save(meta);
         return metaMapper.toDTO(saved);
     }
@@ -35,7 +39,8 @@ public class MetaService {
     }
 
     public Page<MetaDTO> findAll(Pageable pageable) {
-        return metaRepository.findAll(pageable)
+        com.proint.walletly.model.User usuarioLogado = securityUtils.getAuthenticatedUser();
+        return metaRepository.findByUser(usuarioLogado, pageable)
                 .map(metaMapper::toDTO);
     }
 

@@ -7,9 +7,13 @@ import com.proint.walletly.model.Conta;
 import com.proint.walletly.model.User;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 @Repository
 public interface ContaRepository extends JpaRepository<Conta, Long> {
     List<Conta> findByUsuario(User usuario);
+    Page<Conta> findByUsuario(User usuario, Pageable pageable);
     java.util.Optional<Conta> findByApelidoAndUsuario(String apelido, User usuario);
 }
 

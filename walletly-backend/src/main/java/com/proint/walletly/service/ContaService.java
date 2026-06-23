@@ -16,15 +16,19 @@ public class ContaService {
 
     private final ContaRepository contaRepository;
     private final ContaMapper contaMapper;
+    private final com.proint.walletly.utils.SecurityUtils securityUtils;
 
     @Autowired
-    public ContaService(ContaRepository contaRepository, ContaMapper contaMapper) {
+    public ContaService(ContaRepository contaRepository, ContaMapper contaMapper, com.proint.walletly.utils.SecurityUtils securityUtils) {
         this.contaRepository = contaRepository;
         this.contaMapper = contaMapper;
+        this.securityUtils = securityUtils;
     }
 
     public ContaDTO save(ContaDTO dto) {
+        com.proint.walletly.model.User usuarioLogado = securityUtils.getAuthenticatedUser();
         Conta conta = contaMapper.toEntity(dto);
+        conta.setUsuario(usuarioLogado); // Força o usuário logado
         Conta saved = contaRepository.save(conta);
         return contaMapper.toDTO(saved);
     }
@@ -35,7 +39,8 @@ public class ContaService {
     }
 
     public Page<ContaDTO> findAll(Pageable pageable) {
-        return contaRepository.findAll(pageable)
+        com.proint.walletly.model.User usuarioLogado = securityUtils.getAuthenticatedUser();
+        return contaRepository.findByUsuario(usuarioLogado, pageable)
                 .map(contaMapper::toDTO);
     }
 

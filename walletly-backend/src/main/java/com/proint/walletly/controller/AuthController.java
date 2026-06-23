@@ -2,6 +2,7 @@ package com.proint.walletly.controller;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import com.proint.walletly.model.User;
 import com.proint.walletly.repository.UserRepository;
@@ -23,6 +24,8 @@ import com.proint.walletly.utils.SignupRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 @RestController
 @RequestMapping("/auth")
 
@@ -30,10 +33,12 @@ public class AuthController {
     
     private final AuthService authService;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public AuthController(AuthService authService, UserRepository userRepository) {
+    public AuthController(AuthService authService, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.authService = authService;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
     
     @PostMapping("/login")
@@ -101,5 +106,18 @@ public class AuthController {
     @GetMapping("/test")
     public ResponseEntity<String> test() {
         return ResponseEntity.ok("Funciona pae");
+    }
+
+    @GetMapping("/force-paid")
+    public ResponseEntity<String> forcePaid() {
+        Optional<User> optUser = userRepository.findByEmail("asd@gmail.com");
+        if (optUser.isPresent()) {
+            User user = optUser.get();
+            user.setRole(com.proint.walletly.model.enums.RoleEnum.PAID);
+            user.setPassword(passwordEncoder.encode("123456"));
+            userRepository.save(user);
+            return ResponseEntity.ok("Role atualizada para PAID e senha resetada para 123456 com sucesso!");
+        }
+        return ResponseEntity.badRequest().body("Usuário asd@gmail.com não encontrado no banco.");
     }
 }

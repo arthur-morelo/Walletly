@@ -20,11 +20,21 @@ export default function AdminCursosPanel({ cursos, onCursosUpdated }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const payload = {
+        title: formData.Title,
+        description: JSON.stringify({
+          courseDescription: formData.courseDescription,
+          textLeft: formData.textLeft,
+          textRight: formData.textRight
+        }),
+        isPremium: false
+      };
+
       if (isEditing) {
-        await updateCurso(currentCurso.id, formData);
+        await updateCurso(currentCurso.id, payload);
         alert('Curso atualizado com sucesso!');
       } else {
-        await createCurso(formData);
+        await createCurso(payload);
         alert('Curso criado com sucesso!');
       }
       setFormData({ Title: '', courseDescription: '', textLeft: '', textRight: '' });
@@ -40,11 +50,22 @@ export default function AdminCursosPanel({ cursos, onCursosUpdated }) {
   const handleEdit = (curso) => {
     setIsEditing(true);
     setCurrentCurso(curso);
+    let courseDesc = curso.courseDescription;
+    let tLeft = curso.textLeft;
+    let tRight = curso.textRight;
+    if (curso.description) {
+        try {
+            const parsed = JSON.parse(curso.description);
+            courseDesc = parsed.courseDescription;
+            tLeft = parsed.textLeft;
+            tRight = parsed.textRight;
+        } catch(e) {}
+    }
     setFormData({
-      Title: curso.Title || '',
-      courseDescription: curso.courseDescription || '',
-      textLeft: curso.textLeft || '',
-      textRight: curso.textRight || ''
+      Title: curso.Title || curso.title || '',
+      courseDescription: courseDesc || '',
+      textLeft: tLeft || '',
+      textRight: tRight || ''
     });
   };
 
@@ -135,7 +156,7 @@ export default function AdminCursosPanel({ cursos, onCursosUpdated }) {
         <div className="flex flex-col gap-2">
           {cursos.map(curso => (
             <div key={curso.id} className="flex items-center justify-between bg-gray-100 p-3 rounded">
-              <span className="font-medium text-gray-800">{curso.Title}</span>
+              <span className="font-medium text-gray-800">{curso.Title || curso.title}</span>
               <div className="flex gap-2">
                 <button onClick={() => handleEdit(curso)} className="text-sm bg-yellow-500 hover:bg-yellow-600 text-white py-1 px-3 rounded">Editar</button>
                 <button onClick={() => handleDelete(curso.id)} className="text-sm bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded">Excluir</button>

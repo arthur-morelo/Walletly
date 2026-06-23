@@ -26,6 +26,9 @@ public class MetaService {
     }
 
     public MetaDTO save(MetaDTO dto) {
+        System.out.println("=== NOVA META RECEBIDA ===");
+        System.out.println("Dados recebidos: " + dto.toString());
+        
         com.proint.walletly.model.User usuarioLogado = securityUtils.getAuthenticatedUser();
         Meta meta = metaMapper.toEntity(dto);
         meta.setUser(usuarioLogado); // Força o usuário logado

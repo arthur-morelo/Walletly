@@ -28,6 +28,7 @@ public class Course {
     @Builder.Default
     private Boolean isPremium = false;
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_user_id", nullable = false)
     private User creator;

@@ -34,7 +34,7 @@ export default function CursosList() {
     fetchCursos();
   }, []);
 
-  const isAdmin = user?.email === 'arthurmorelo@gmail.com';
+  const isAdmin = user?.email === 'arthurmorelo@gmail.com' || user?.role === 'ADMIN';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -54,18 +54,28 @@ export default function CursosList() {
           <p className="text-gray-500">Carregando cursos...</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-20">
-            {cursos.map((curso) => (
+            {cursos.map((curso) => {
+              let courseDesc = curso.courseDescription;
+              if (!courseDesc && curso.description) {
+                  try {
+                      const parsed = JSON.parse(curso.description);
+                      courseDesc = parsed.courseDescription;
+                  } catch(e) {
+                      courseDesc = curso.description;
+                  }
+              }
+              return (
               <Link 
                 to={`/cursos/${curso.id}`} 
                 key={curso.id}
                 className="transform transition-transform duration-300 hover:scale-105"
               >
                 <CursoCard 
-                  Title={curso.Title} 
-                  courseDescription={curso.courseDescription}
+                  Title={curso.Title || curso.title} 
+                  courseDescription={courseDesc}
                 />
               </Link>
-            ))}
+            )})}
           </div>
         )}
       </div>

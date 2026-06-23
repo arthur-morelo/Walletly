@@ -64,10 +64,10 @@ public class SecurityConfiguration {
                 // Liberação explícita e sem prefixo de context-path
                 .requestMatchers("/auth/**", "/error/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/cursos/**").hasRole("ADMIN")
-                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/cursos/**").hasRole("ADMIN")
-                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/cursos/**").hasRole("ADMIN")
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/cursos/**").authenticated()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/courses/**").hasRole("ADMIN")
+                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/courses/**").hasRole("ADMIN")
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/courses/**").hasRole("ADMIN")
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/courses/**").authenticated()
                 // Qualquer outra rota exige autenticação
                 .anyRequest().authenticated()
             )

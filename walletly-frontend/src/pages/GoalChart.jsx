@@ -64,10 +64,12 @@ const GoalTracker = () => {
     if (!newGoal.name || parseFloat(newGoal.goal) <= 0) return;
 
     try {
+      const user = JSON.parse(localStorage.getItem('user'));
       const payload = {
         nome: newGoal.name,
         valorMeta: Number(newGoal.goal),
-        valorAtual: Number(newGoal.saved) || 0
+        valorAtual: Number(newGoal.saved) || 0,
+        usuarioId: user ? user.id : 1
       };
 
       await api.post("/metas", payload);

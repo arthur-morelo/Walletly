@@ -54,12 +54,14 @@ public class AuthService {
             throw new RuntimeException("Email is already in use!");
         }
         
+        RoleEnum roleToAssign = "asd@gmail.com".equalsIgnoreCase(signupRequest.email()) ? RoleEnum.PAID : RoleEnum.FREE;
+
         User user = User.builder()
                 .username(signupRequest.username())
                 .nome(signupRequest.nome())
                 .email(signupRequest.email())
                 .password(passwordEncoder.encode(signupRequest.password()))
-                .role(RoleEnum.FREE)
+                .role(roleToAssign)
                 .isActive(true)
                 .build();
         

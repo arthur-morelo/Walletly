@@ -15,7 +15,7 @@ export default function PlanRoute({ children }) {
   }
 
   // Verifica plano pago ou admin
-  if (user.plano !== 'paid' && user.email !== 'arthurmorelo@gmail.com') {
+  if (user.plano !== 'paid' && user.email !== 'arthurmorelo@gmail.com' && user.role !== 'ADMIN' && user.role !== 'PAID') {
     return <Navigate to="/planos" replace />;
   }
 

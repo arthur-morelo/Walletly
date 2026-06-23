@@ -50,7 +50,18 @@ export default function Curso() {
     );
   }
 
-  const { Title, textLeft, textRight } = curso;
+  let Title = curso.Title || curso.title;
+  let textLeft = curso.textLeft;
+  let textRight = curso.textRight;
+  if (!textLeft && curso.description) {
+      try {
+          const parsed = JSON.parse(curso.description);
+          textLeft = parsed.textLeft;
+          textRight = parsed.textRight;
+      } catch(e) {
+          textLeft = curso.description;
+      }
+  }
 
   return (
     <>

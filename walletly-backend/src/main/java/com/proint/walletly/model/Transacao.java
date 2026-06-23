@@ -26,6 +26,7 @@ public class Transacao {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @org.hibernate.envers.NotAudited
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fk_extrato_history")
     private ExtratoHistory extratoHistory;

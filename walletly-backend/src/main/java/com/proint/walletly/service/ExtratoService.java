@@ -194,11 +194,16 @@ public class ExtratoService {
                     tipoTransacao = tipoTransacao.substring(0, 10);
                 }
 
+                BigDecimal valor = BigDecimal.valueOf(Math.abs(ofxTx.getAmount()));
+                if (valor.compareTo(new BigDecimal("0.01")) < 0) {
+                    continue; // Pula transações com valor zero (evita erro no @DecimalMin)
+                }
+
                 Transacao tx = Transacao.builder()
                     .conta(contaOfx)
                     .categoria(categoriaPadrao)
                     .descricao(descricao)
-                    .valor(BigDecimal.valueOf(Math.abs(ofxTx.getAmount())))
+                    .valor(valor)
                     .tipoTransacao(tipoTransacao)
                     .dataTransacao(ofxTx.getDatePosted().toInstant().atZone(ZoneId.systemDefault()).toLocalDate())
                     .extratoHistory(extratoHistory)

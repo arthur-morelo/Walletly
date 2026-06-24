@@ -2,14 +2,33 @@ import React from 'react';
 import Header from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import api from '../services/api';
 
 export default function Planos() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const handleAssinar = () => {
-    // Simular chamada para assinar plano ou redirecionar pro checkout
-    alert('Redirecionando para o checkout (simulação)...');
+  const handleAssinarPlano = async () => {
+    try {
+        const token = localStorage.getItem('@Walletly:token');
+        // Chama o endpoint temporário de ativação de plano
+        await api.put('/users/ativar-plano-teste', {}, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        // Atualiza a role no objeto de usuário salvo no localStorage para 'PAID'
+        const userData = JSON.parse(localStorage.getItem('@Walletly:user'));
+        if (userData) {
+            userData.role = 'PAID';
+            localStorage.setItem('@Walletly:user', JSON.stringify(userData));
+        }
+
+        alert('Plano assinado com sucesso! Área de cursos desbloqueada.');
+        window.location.href = '/cursos'; // Redireciona direto para a área de cursos
+    } catch (error) {
+        console.error('Erro ao assinar plano:', error);
+        alert('Falha ao ativar o plano de testes.');
+    }
   };
 
   return (
@@ -100,7 +119,7 @@ export default function Planos() {
              </button>
             ) : (
               <button 
-                onClick={handleAssinar}
+                onClick={handleAssinarPlano}
                 className="w-full py-3 px-6 rounded-lg font-bold text-blue-900 bg-yellow-400 hover:bg-yellow-300 transition-colors shadow-md"
               >
                 Assinar Agora

@@ -9,9 +9,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/users")
 public class UserController {
 
     private final UserRepository userRepository;
@@ -42,5 +43,14 @@ public class UserController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("Role inválida");
         }
+    }
+
+    @PutMapping("/ativar-plano-teste")
+    public ResponseEntity<?> ativarPlanoTeste() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User usuario = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        usuario.setRole(RoleEnum.PAID); // Define a role como PAID
+        userRepository.save(usuario);
+        return ResponseEntity.ok().build();
     }
 }

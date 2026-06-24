@@ -13,7 +13,6 @@ function MenuComponent() {
 
   const menuItems = [
     { to: "/Metas", icon: Target, label: "Metas" },
-    { to: "/", icon: BookOpen, label: "Educação financeira" },
     { to: "/dashboard", icon: PieChart, label: "Controle de orçamento" },
     { to: "/extrato", icon: Receipt, label: "Extrato" },
     { to: "/cursos", icon: GraduationCap, label: "Cursos" }
@@ -37,17 +36,16 @@ function MenuComponent() {
 
       {/* Overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-30 transition-opacity duration-300"
           onClick={toggleMenu}
         />
       )}
 
       {/* Menu Sidebar */}
-      <div 
-        className={`fixed top-0 right-0 w-80 h-screen bg-gradient-to-b from-blue-950 via-blue-900 to-blue-950 shadow-2xl z-40 transform transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+      <div
+        className={`fixed top-0 right-0 w-80 h-screen bg-gradient-to-b from-blue-950 via-blue-900 to-blue-950 shadow-2xl z-40 transform transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "translate-x-full"
+          }`}
       >
         <div className="flex flex-col h-full">
           {/* Header do Menu */}
@@ -62,17 +60,16 @@ function MenuComponent() {
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.to);
-                
+
                 return (
                   <li key={item.to}>
                     <Link
                       to={item.to}
                       onClick={toggleMenu}
-                      className={`flex items-center gap-3 w-full p-4 rounded-xl text-white text-base font-medium transition-all duration-200 ${
-                        active 
-                          ? "bg-cyan-600 shadow-lg shadow-cyan-600/50 scale-105" 
+                      className={`flex items-center gap-3 w-full p-4 rounded-xl text-white text-base font-medium transition-all duration-200 ${active
+                          ? "bg-cyan-600 shadow-lg shadow-cyan-600/50 scale-105"
                           : "bg-blue-800/50 hover:bg-blue-800 hover:scale-105 hover:shadow-lg"
-                      }`}
+                        }`}
                     >
                       <Icon className="w-5 h-5" />
                       <span>{item.label}</span>
